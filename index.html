@@ -9,6 +9,7 @@
 <title>Combat Patrol Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#14170f;
@@ -104,8 +105,8 @@
     padding:12px 14px; cursor:pointer; background:linear-gradient(90deg, var(--surface2), var(--surface));
   }
   .unit-head:active{ background:var(--surface3); }
-  .unit-title{ display:flex; flex-direction:column; gap:2px; }
-  .unit-title .name{ font-family:'Bebas Neue'; font-size:21px; letter-spacing:.5px; color:var(--bone); }
+  .unit-title{ display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+  .unit-title .name{ font-family:'Bebas Neue'; font-size:21px; letter-spacing:.5px; color:var(--bone); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .unit-title .kw{ font-size:11px; color:var(--muted-dim); letter-spacing:.5px; }
   .chevron{ font-size:14px; color:var(--green-bright); transition:transform .15s; flex:0 0 auto; }
   .unit-card.open .chevron{ transform:rotate(90deg); }
@@ -137,6 +138,32 @@
   .ability .label{ font-weight:700; color:var(--green-bright); }
   .ability .core{ font-weight:700; color:var(--yellow); }
   .keywords{ margin-top:10px; font-size:11px; color:var(--muted-dim); line-height:1.6; }
+
+  /* OWNED TOGGLE */
+  .owned-toggle{
+    display:inline-flex; align-items:center; gap:5px; background:var(--surface3); border:1px solid var(--line);
+    color:var(--muted); font-family:'Barlow'; font-weight:700; font-size:10.5px; letter-spacing:.4px; text-transform:uppercase;
+    padding:5px 9px; border-radius:20px; cursor:pointer; flex:0 0 auto; white-space:nowrap;
+  }
+  .owned-toggle.owned{ background:var(--green); border-color:var(--green); color:#0e1109; }
+  .owned-toggle .dot{ width:7px; height:7px; border-radius:50%; background:var(--muted-dim); flex:0 0 auto; }
+  .owned-toggle.owned .dot{ background:#0e1109; }
+
+  /* PHOTO GALLERY */
+  .photo-section{ margin:6px 0 12px; }
+  .photo-section .ps-label{ font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-weight:700; }
+  .photo-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
+  .photo-thumb{ position:relative; flex:0 0 auto; width:72px; height:72px; border-radius:8px; overflow:hidden; border:1px solid var(--line); }
+  .photo-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-thumb .del{
+    position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(10,12,7,0.75);
+    color:var(--bone); border:none; font-size:11px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .photo-add{
+    flex:0 0 auto; width:72px; height:72px; border-radius:8px; border:1.5px dashed var(--line); background:var(--surface3);
+    color:var(--muted); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; cursor:pointer; gap:2px;
+  }
+  .photo-add span.plus{ font-size:20px; line-height:1; color:var(--green-bright); }
   .keywords b{ color:var(--muted); }
 
   /* GENERIC CARD (stratagems / enhancements / secondaries / glossary) */
@@ -221,8 +248,10 @@
   .force-card .fc-sub{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
   .force-card .fc-badge{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:var(--surface3); color:var(--muted); white-space:nowrap; }
   .force-card.active .fc-badge{ background:var(--green); color:#0e1109; }
+  .fc-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
   .force-empty-note{ font-size:12.5px; color:var(--muted-dim); line-height:1.6; padding:10px 4px 2px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 <div class="app">
@@ -269,6 +298,13 @@
 /* ============ DATA ============ */
 let selectedEnhancement = null;
 let selectedRegimentAbility = null;
+
+/* ============ SUPABASE ============ */
+const SUPABASE_URL = 'https://snwqetahwzhoeyoglbcu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_m6z4uDzeWcSM8rQ4XNN5jw_RBwMniCC';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let photosState = {};  // unit name -> array of {id, photo_url}
+
 
 const TABS = [
   {id:'units', label:'Units', icon:'M4 21V9l8-6 8 6v12h-5v-7H9v7H4z'},
@@ -503,6 +539,1168 @@ const FORCES = {
         "Allocate your daemonic power points to friendly units — each unit can have a maximum of 3 — then all unallocated points are lost."
       ]
     }
+  },
+  badmoonmadmob: {
+    id:'badmoonmadmob', name:"Bad Moon Madmob", faction:"Gloomspite Gitz", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Gloomspite Gitz · AoS 4th Edition",
+    roster:"1x Loonboss (General) · 2x Moonclan Stabbas (10 models each) · 2x Squig Hoppers (5 models each) · 1x Rockgut Troggoths (3 models).",
+    units:[
+      {
+        name:"Loonboss", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"5\"", h:"5", sv:"4+", ctrl:"2"},
+        ward:"6+",
+        equip:"This model is equipped with: Moon-slicer.",
+        melee:[
+          {name:"Moon-slicer", tag:"", atk:"5", hit:"4+", wnd:"4+", rnd:"1", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"I'm da Boss (Your Hero phase):", text:"Pick a friendly Moonclan Stabbas unit wholly within 12\" of this unit to be the target. Pick one: if the target is not in combat, return D6 slain models to it; or add 1 to hit rolls for attacks made by the target unit until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, GLOOMSPITE GITZ, DESTRUCTION"
+      },
+      {
+        name:"Moonclan Stabbas", count:"10 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"5\"", h:"1", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Stabba.",
+        melee:[
+          {name:"Stabba", tag:"", atk:"2", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Netters (Any Combat phase):", text:"Pick an enemy Infantry unit in combat with this unit. Roll a dice: on a 2+, subtract 1 from hit rolls for attacks made by the target unit this phase."}
+        ],
+        keywords:"INFANTRY, GLOOMSPITE GITZ, DESTRUCTION, MOONCLAN"
+      },
+      {
+        name:"Squig Hoppers", count:"5 models · fielded twice (x2 units)", kw:"Cavalry · Fly",
+        stats:{m:"D6+8\"", h:"2", sv:"6+", ctrl:"1"},
+        equip:"Every model is equipped with: Slitta; Squig's Fang-filled Gob.",
+        melee:[
+          {name:"Slitta", tag:"", atk:"2", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"},
+          {name:"Squig's Fang-filled Gob", tag:"Companion", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Boing! Boing! Boing! (Any Movement phase):", text:"Pick an enemy unit that any models in this unit passed across this phase to be the target, then roll a dice for each model in this unit that did so. For each 4+, inflict 1 mortal damage on the target."}
+        ],
+        keywords:"CAVALRY, FLY, GLOOMSPITE GITZ, DESTRUCTION, SQUIG, MOONCLAN"
+      },
+      {
+        name:"Rockgut Troggoths", count:"3 models", kw:"Infantry",
+        stats:{m:"6\"", h:"5", sv:"4+", ctrl:"2"},
+        ward:"5+",
+        equip:"Every model is equipped with: Throwin' Boulders; Massive Stone Maul.",
+        ranged:[
+          {name:"Throwin' Boulders", tag:"", range:"10\"", atk:"1", hit:"5+", wnd:"2+", rnd:"2", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Massive Stone Maul", tag:"", atk:"2", hit:"4+", wnd:"2+", rnd:"2", dmg:"3"}
+        ],
+        abilities:[
+          {label:"Regeneration (Start of any turn):", text:"Heal (D3) this unit."}
+        ],
+        keywords:"INFANTRY, GLOOMSPITE GITZ, DESTRUCTION, TROGGOTH"
+      }
+    ],
+    regimentAbilities:[
+      {name:"The Lunatic Hordes",
+        when:"Your Hero phase.",
+        effect:"Pick a friendly Moonclan Stabbas unit. You can return up to D3 slain models to that unit."},
+      {name:"Fight Another Day",
+        when:"Any Combat phase, after your general uses a Fight ability.",
+        effect:"Pick your general if they used a Fight ability this turn. Your general can make a 2D6\" move but cannot end that move in combat."},
+      {name:"The Hand of Gork",
+        when:"End of any turn.",
+        effect:"Pick a friendly unit that is not in combat. Remove that unit from the battlefield and set it up again more than 9\" from all enemy units."}
+    ],
+    enhancements:[
+      {name:"The Clammy Cowl", badge:"General only",
+        effect:"(Passive) Subtract 1 from hit rolls for attacks that target your general."},
+      {name:"Hallucinogenic Fungus Brew", badge:"General only",
+        effect:"(Passive) Your general has Ward (4+) in the first battle round, Ward (5+) in the second battle round, and Ward (6+) in the third and fourth battle rounds."},
+      {name:"Nightshade Mushroom", badge:"General only",
+        effect:"(Once per battle, enemy Movement phase) Pick a friendly unit within your general's combat range. That unit cannot be targeted by shooting attacks in the next Shooting phase."}
+    ],
+    factionRule: {
+      title:"Under the Light of the Bad Moon",
+      when:"Pick a territory (friendly or enemy) to be under the Light of the Bad Moon — it stays that way for battle rounds 1–2, then switches to the other territory for rounds 3–4.",
+      effects:[
+        "Frothing Zealots: Moonclan Stabbas units wholly within that territory get +3 to their control score.",
+        "Lunar Squigs: Squig Hoppers units wholly within that territory take no mortal damage from Retreat abilities.",
+        "Moonlit Hide: Rockgut Troggoths units wholly within that territory get +1 to save rolls.",
+        "Squigalanche (once per battle, start of the first battle round): one Squig Hoppers unit isn't deployed normally — from battle round 3 onward it can be set up wholly within your territory, within 3\" of a battlefield edge, and more than 6\" from all enemy units."
+      ]
+    }
+  },
+  tyrantsbellow: {
+    id:'tyrantsbellow', name:"Tyrant's Bellow", faction:"Ogor Mawtribes", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Ogor Mawtribes · AoS 4th Edition",
+    roster:"1x Tyrant (General) · 1x Ironblaster · 1x Mournfang Pack (2 models) · 2x Ogor Gluttons (3 models each) · 1x Leadbelchers (4 models).",
+    units:[
+      {
+        name:"Tyrant", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"6\"", h:"8", sv:"4+", ctrl:"5"},
+        equip:"This model is equipped with: Ogor Pistols; Thundermace; Beastskewer Glaive.",
+        ranged:[
+          {name:"Ogor Pistols", tag:"Shoot in Combat", range:"10\"", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Thundermace", tag:"", atk:"3", hit:"4+", wnd:"2+", rnd:"2", dmg:"3"},
+          {name:"Beastskewer Glaive", tag:"Anti-Monster (+1 Rend)", atk:"2", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Bully of the First Degree (Your Hero phase):", text:"Pick a friendly unit wholly within 12\" of this unit to be the target (cannot pick this unit). Add 3 to the target's control score until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Ironblaster", count:"1 model", kw:"War Machine",
+        stats:{m:"9\"", h:"9", sv:"4+", ctrl:"2"},
+        equip:"This model is equipped with: Ironblaster Cannon; Clubber; Rhinox's Sharp Horns.",
+        ranged:[
+          {name:"Ironblaster Cannon", tag:"", range:"18\"", atk:"2", hit:"4+", wnd:"2+", rnd:"2", dmg:"D3+3"}
+        ],
+        melee:[
+          {name:"Clubber", tag:"", atk:"2", hit:"4+", wnd:"2+", rnd:"-", dmg:"2"},
+          {name:"Rhinox's Sharp Horns", tag:"Companion", atk:"2", hit:"4+", wnd:"2+", rnd:"1", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"Rhinox Charge (Passive):", text:"The Damage characteristic of this unit's Rhinox's Sharp Horns is 3 if it charged in the same turn."}
+        ],
+        keywords:"WAR MACHINE, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Leadbelchers", count:"4 models", kw:"Infantry",
+        stats:{m:"6\"", h:"4", sv:"5+", ctrl:"2"},
+        equip:"Every model is equipped with: Leadbelcher Gun; Bludgeoning Blow.",
+        ranged:[
+          {name:"Leadbelcher Gun", tag:"", range:"15\"", atk:"D3", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        melee:[
+          {name:"Bludgeoning Blow", tag:"", atk:"2", hit:"4+", wnd:"2+", rnd:"-", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Firing from the Belly (Passive):", text:"Add 1 to hit rolls for this unit's shooting attacks if it has not used a Move ability this turn."}
+        ],
+        keywords:"INFANTRY, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Mournfang Pack", count:"2 models", kw:"Cavalry",
+        stats:{m:"9\"", h:"6", sv:"4+", ctrl:"2"},
+        equip:"Every model is equipped with: Culling Clubs and Hackers; Mournfang's Tusks.",
+        melee:[
+          {name:"Culling Clubs and Hackers", tag:"", atk:"3", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"},
+          {name:"Mournfang's Tusks", tag:"Companion", atk:"4", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Linebreakers (Passive):", text:"Subtract 1 from wound rolls for shooting attacks that target this unit."}
+        ],
+        keywords:"CAVALRY, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Ogor Gluttons", count:"3 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"6\"", h:"4", sv:"5+", ctrl:"2"},
+        equip:"Every model is equipped with: Ogor Weapons.",
+        melee:[
+          {name:"Ogor Weapons", tag:"", atk:"4", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Driven by Hunger (Passive):", text:"Add 1 to charge rolls for this unit."}
+        ],
+        keywords:"INFANTRY, OGOR MAWTRIBES, DESTRUCTION"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Pulverising Girth",
+        when:"Once per phase, any Charge phase.",
+        effect:"Pick any number of friendly units that charged this phase. For each, pick an enemy unit in combat with it and roll a dice — on a 4+, inflict 1 mortal damage on that enemy unit."},
+      {name:"Bred for Toughness",
+        when:"Passive.",
+        effect:"Add 1 to the Health characteristic of your Ironblaster and your Mournfang Pack unit."}
+    ],
+    enhancements:[
+      {name:"Longstrider", badge:"General only",
+        effect:"(Passive) Your general has a Move characteristic of 8\" instead of 6\"."},
+      {name:"Flask of Stonehorn Blood", badge:"General only",
+        effect:"(Once per battle, reaction: opponent declared an Attack ability and targeted your general) Your general has Ward (3+) this phase."},
+      {name:"Blubbergrub", badge:"General only",
+        effect:"(Once per battle, any Movement phase) Pick either your Ironblaster or your Mournfang Pack unit if it is within your general's combat range. Heal (D6) that unit."},
+      {name:"Booming Roar", badge:"General only",
+        effect:"(Any Combat phase) Roll a dice. On a 4+, subtract 1 from hit rolls for attacks made by enemy units this phase while they are within 9\" of your general."}
+    ],
+    factionRule: {
+      title:"On the Mawpath",
+      when:"Your Ironblaster, Mournfang Pack, and 1 unit of Ogor Gluttons are not set up during the deployment phase.",
+      effects:[
+        "From the third battle round onward, each of those units can use Bellowing Arrival (Your Movement phase, Core): set up the unit anywhere on the battlefield, within 1\" of a battlefield edge and more than 6\" from all enemy units."
+      ]
+    }
+  },
+  wallsmasherstomp: {
+    id:'wallsmasherstomp', name:"Wallsmasher Stomp", faction:"Sons of Behemat", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Sons of Behemat · AoS 4th Edition",
+    roster:"1x Mancrusher Gargant (Bullstomper, General) · 2x Mancrusher Gargant.",
+    units:[
+      {
+        name:"Mancrusher Gargant", count:"3 models (1 is the general 'Bullstomper')", kw:"Monster",
+        stats:{m:"8\"", h:"12", sv:"5+", ctrl:"10"},
+        equip:"Every model is equipped with: Throwin' Rocks; Massive Club; 'Eadbutt; Mighty Kick.",
+        ranged:[
+          {name:"Throwin' Rocks", tag:"", range:"12\"", atk:"1", hit:"5+", wnd:"2+", rnd:"2", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Massive Club", tag:"", atk:"4", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"},
+          {name:"'Eadbutt", tag:"", atk:"1", hit:"4+", wnd:"2+", rnd:"2", dmg:"4"},
+          {name:"Mighty Kick", tag:"", atk:"1", hit:"4+", wnd:"2+", rnd:"2", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"Bullstomper (General only):", text:"The general has the HERO keyword (in addition to MONSTER) but does not have the Reinforcements keyword or icon."},
+          {label:"Stuff 'Em In Me Bag (Any Combat phase):", text:"Pick an enemy unit in combat with this unit to be the target, then roll a dice. If the roll is at least double the target unit's Health characteristic, 1 model in that unit is slain."},
+          {label:"Timber! (Passive):", text:"If this model is slain, before removing it from the battlefield, the players must roll off. The winner picks a point on the battlefield up to 3\" from this model. Inflict D3 mortal damage on each enemy unit within 2\" of that point."}
+        ],
+        keywords:"MONSTER, REINFORCEMENTS, SONS OF BEHEMAT, DESTRUCTION"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Foe-Chompers",
+        when:"Passive.",
+        effect:"Each time an enemy model is slain by a friendly unit's 'Stuff 'Em In Me Bag' ability, Heal (D3) that unit."},
+      {name:"Earth-Shaking Charge",
+        when:"Once per phase (army), any Charge phase.",
+        effect:"Pick a friendly unit that charged this phase, then roll a dice for each enemy unit in combat with it. On a 3+, that enemy unit has Strike-Last this turn."}
+    ],
+    enhancements:[
+      {name:"Monstrously Tough", badge:"General only",
+        effect:"(Passive) Your general has a Health characteristic of 15 instead of 12."},
+      {name:"Lanky Git", badge:"General only",
+        effect:"(Passive) When you make a charge roll for your general, roll 3D6 instead of 2D6."},
+      {name:"Extra-Big Bag", badge:"General only",
+        effect:"(Passive) When your general uses their 'Stuff 'Em In Me Bag' ability, you can pick 2 enemy units instead of 1 (roll for each)."},
+      {name:"Furiously Territorial", badge:"General only",
+        effect:"(Passive) Add 1 to hit rolls for attacks made by your general that target an enemy unit contesting an objective you do not control."}
+    ],
+    factionRule: {
+      title:"'Grab Those Rocks and Chuck 'Em!' / Bellowing Roar",
+      when:"Two battle traits are available to this Spearhead.",
+      effects:[
+        "Bellowing Roar (Any Combat phase): pick a friendly unit, pick an enemy unit in combat with it, then roll a dice — on a 2+, subtract 1 from hit rolls for attacks made by the target unit this phase.",
+        "'Grab Those Rocks and Chuck 'Em!' (Your Hero phase): pick your general, then pick another friendly unit wholly within 12\" of them — add 1 to the Attacks characteristic of that unit's Throwin' Rocks this turn."
+      ]
+    }
+  },
+  ironjawzbigmob: {
+    id:'ironjawzbigmob', name:"Ironjawz Bigmob", faction:"Orruk Warclans", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Orruk Warclans (Ironjawz) · AoS 4th Edition",
+    roster:"1x Megaboss (General) · 3x Brute Ragerz · 2x Ardboyz (5 models each) · 5x Brutes.",
+    units:[
+      {
+        name:"Megaboss", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"4\"", h:"8", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Boss-choppa.",
+        melee:[
+          {name:"Boss-choppa", tag:"", atk:"8", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Get Stuck In, Ladz! (Your Hero phase):", text:"Pick this unit or a friendly Brute unit wholly within 12\" of this unit to be the target. Roll a dice: on a 2+, add 1 to the Attacks characteristic of the target's melee weapons until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, ORRUK WARCLANS, IRONJAWZ, DESTRUCTION"
+      },
+      {
+        name:"Ardboyz", count:"5 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"4\"", h:"2", sv:"3+", ctrl:"1"},
+        equip:"Every model is equipped with: Choppa or Stikka.",
+        melee:[
+          {name:"Choppa or Stikka", tag:"Anti-charge (+1 Rend)", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Shield Bash (Any Combat phase):", text:"Pick an enemy unit within 1\" of this unit to be the target. Roll a dice for each model in this unit that is within 3\" of the target — for each 6, inflict 1 mortal damage on the target."}
+        ],
+        keywords:"INFANTRY, ORRUK WARCLANS, IRONJAWZ, DESTRUCTION"
+      },
+      {
+        name:"Brute Ragerz", count:"3 models", kw:"Infantry · Brute",
+        stats:{m:"4\"", h:"3", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Rager Weapons.",
+        melee:[
+          {name:"Rager Weapons", tag:"", atk:"3", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Unleashed Rage (Passive):", text:"This unit has Strike-first if it charged in the same turn."}
+        ],
+        keywords:"INFANTRY, BRUTE, ORRUK WARCLANS, IRONJAWZ, DESTRUCTION"
+      },
+      {
+        name:"Brutes", count:"5 models", kw:"Infantry · Brute",
+        stats:{m:"4\"", h:"3", sv:"3+", ctrl:"1"},
+        equip:"Every model is equipped with: Brute Weapons.",
+        melee:[
+          {name:"Brute Weapons", tag:"", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"You Messin'? (Passive):", text:"Enemy units with a Health characteristic of 1 or 2 cannot contest objectives while they are in combat with this unit."}
+        ],
+        keywords:"INFANTRY, BRUTE, ORRUK WARCLANS, IRONJAWZ, DESTRUCTION"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Mega Bossy",
+        when:"Passive (if this unit charged this turn).",
+        effect:"If your Megaboss charged this turn, for the rest of the turn, add 1 to charge rolls for friendly units while they are wholly within 12\" of it."}
+    ],
+    enhancements:[
+      {name:"Armour of Gork", badge:"General only",
+        effect:"(Passive) Your general has Ward (6+)."},
+      {name:"Trophy Skulls", badge:"General only",
+        effect:"(Passive) Your general's Control characteristic is 5."},
+      {name:"Amberbone Whetstone", badge:"General only",
+        effect:"(Passive) The Rend characteristic of your general's melee weapons is 2."}
+    ],
+    factionRule: {
+      title:"Natural Disaster / A Proper Ruckus",
+      when:"Your Brutes are not set up during the deployment phase.",
+      effects:[
+        "Natural Disaster (Passive): if you make an unmodified charge roll of 8+ for a friendly unit, add 1 to the Attacks characteristic of that unit's melee weapons for the rest of the turn.",
+        "A Proper Ruckus (Once per battle, reaction: you declared the 'Mighty Destroyers' ability): all friendly units on the battlefield that were not set up this turn are the targets of that ability instead.",
+        "From the third battle round onward, your Brutes can use 'Ere We Go! (Your Movement phase, Core): set up this unit anywhere on the battlefield more than 6\" from all enemy units.",
+        "Mighty Destroyers (Once per turn (army), any Hero phase): pick a friendly unit that was not set up this turn — it can move up to 3\", can move into combat, and must end that move in combat if it was in combat at the start of the move."
+      ]
+    }
+  },
+  swampskulkagang: {
+    id:'swampskulkagang', name:"Swampskulka Gang", faction:"Orruk Warclans", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Orruk Warclans (Kruleboyz) · AoS 4th Edition",
+    roster:"1x Killaboss on Great Gnashtoof (General) · 1x Murknob with Belcha-banna · 3x Man-skewer Boltboyz · 2x Gutrippaz (5 models each) · 1x Beast-skewer Killbow.",
+    units:[
+      {
+        name:"Killaboss on Great Gnashtoof", count:"1 model (General)", kw:"Hero · Cavalry",
+        stats:{m:"10\"", h:"10", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Jagged Boss-stikka; Gnashtoof's Bone-crushing Fangs.",
+        melee:[
+          {name:"Jagged Boss-stikka", tag:"Crit (Mortal)", atk:"4", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"},
+          {name:"Gnashtoof's Bone-crushing Fangs", tag:"Companion", atk:"5", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"All Part of da Plan (Your Hero phase):", text:"Pick a friendly unit wholly within 9\" of this unit to be the target (cannot pick this unit). Add 3 to the target's control score until the start of your next turn."}
+        ],
+        keywords:"HERO, CAVALRY, ORRUK WARCLANS, KRULEBOYZ, DESTRUCTION"
+      },
+      {
+        name:"Murknob with Belcha-banna", count:"1 model", kw:"Hero · Infantry",
+        stats:{m:"5\"", h:"6", sv:"4+", ctrl:"5"},
+        equip:"This model is equipped with: Murknob Cleaver.",
+        melee:[
+          {name:"Murknob Cleaver", tag:"Crit (Mortal)", atk:"4", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Breath of the Mire-drakes (Any Combat phase):", text:"Roll a dice for each enemy unit in combat with this unit. On a 1, nothing happens. On a 2-5, inflict 1 mortal damage on that enemy unit. On a 6, inflict D3 mortal damage on that unit."}
+        ],
+        keywords:"HERO, INFANTRY, ORRUK WARCLANS, KRULEBOYZ, DESTRUCTION"
+      },
+      {
+        name:"Gutrippaz", count:"5 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"5\"", h:"2", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Wicked Hacka.",
+        melee:[
+          {name:"Wicked Hacka", tag:"Crit (Mortal)", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Scare Taktikz (Any Combat phase):", text:"Roll a dice. On a 3+, subtract 1 from hit rolls for attacks that target this unit this phase. This ability has no effect on attacks made by Heroes."}
+        ],
+        keywords:"INFANTRY, ORRUK WARCLANS, KRULEBOYZ, DESTRUCTION"
+      },
+      {
+        name:"Man-skewer Boltboyz", count:"3 models", kw:"Infantry",
+        stats:{m:"5\"", h:"2", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Man-skewer Crossbow; Jaggedy Blade.",
+        ranged:[
+          {name:"Man-skewer Crossbow", tag:"Crit (Auto-wound)", range:"18\"", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        melee:[
+          {name:"Jaggedy Blade", tag:"Crit (Mortal)", atk:"1", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Pick 'Em Off (Passive):", text:"Add 1 to hit rolls for this unit's shooting attacks if it has not used a Move ability this turn."}
+        ],
+        keywords:"INFANTRY, ORRUK WARCLANS, KRULEBOYZ, DESTRUCTION"
+      },
+      {
+        name:"Beast-skewer Killbow", count:"1 model", kw:"War Machine",
+        stats:{m:"5\"", h:"5", sv:"5+", ctrl:"2"},
+        equip:"This model is equipped with: Beast-skewer Bolts; Jaggedy Blades.",
+        ranged:[
+          {name:"Beast-skewer Bolts", tag:"Crit (Auto-wound)", range:"24\"", atk:"2", hit:"4+", wnd:"2+", rnd:"2", dmg:"D6"}
+        ],
+        melee:[
+          {name:"Jaggedy Blades", tag:"Crit (Mortal)", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Skewered (Passive):", text:"The Damage characteristic of this unit's Beast-skewer Bolts is 6 instead of D6 if the target is a Monster."}
+        ],
+        keywords:"WAR MACHINE, ORRUK WARCLANS, KRULEBOYZ, DESTRUCTION"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Kunnin' Plan",
+        when:"Once per turn, your Hero phase.",
+        effect:"Pick a friendly unit wholly within 12\" of your general. If that unit uses a Retreat ability this turn, no mortal damage is inflicted on it and it can still use Shoot and/or Charge abilities later in the turn."},
+      {name:"Mork's Eye Pebble",
+        when:"Once per battle, enemy Movement phase.",
+        effect:"In the next shooting phase, friendly units have Ward (5+) while they are wholly within 12\" of your general."}
+    ],
+    enhancements:[
+      {name:"Egomaniak", badge:"General only",
+        effect:"(Passive) If any other friendly units are within your general's combat range, before you allocate a damage point to your general, roll a dice — on a 4+, you must allocate that damage point to one of those units instead."},
+      {name:"Eye-Biter Ash", badge:"General only",
+        effect:"(Once per battle, any Combat phase) Pick an enemy unit in combat with your general and roll a dice. On a 1-4, subtract 1 from hit rolls for attacks made by that unit for the rest of the phase. On a 5+, subtract 1 from hit rolls for attacks made by that unit for the rest of the battle."}
+    ],
+    factionRule: {
+      title:"Kruleboyz Waaagh! / Covered in Mud / Noisy Racket",
+      when:"Several battle traits are available to this Spearhead.",
+      effects:[
+        "Kruleboyz Waaagh! (Once per battle, any Combat phase): pick your general, then pick another friendly unit wholly within 12\" of them — your general and the target have Strike-first this phase.",
+        "Covered in Mud (Passive): pick a friendly unit — for the rest of the battle, that unit is not visible to enemy models that are more than 12\" away from it.",
+        "Noisy Racket (Start of the first battle round): subtract 1 from wound rolls for attacks made by enemy units in the first battle round."
+      ]
+    }
+  },
+  scrapglutt: {
+    id:'scrapglutt', name:"Scrapglutt", faction:"Ogor Mawtribes", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Ogor Mawtribes · AoS 4th Edition",
+    roster:"1x Mantrappers (General) · 2x Ironguts (2 models each) · 1x Ironguts (4 models) · 1x Gnoblars (12 models) · 1x Gnoblar Scraplauncher.",
+    units:[
+      {
+        name:"Mantrappers", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"6\"", h:"7", sv:"5+", ctrl:"5"},
+        equip:"This model is equipped with: Mantrapper Crossbow; Frost Sabre's Fangs; Culling Knife.",
+        ranged:[
+          {name:"Mantrapper Crossbow", tag:"", range:"12\"", atk:"2", hit:"4+", wnd:"2+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Frost Sabre's Fangs", tag:"Companion", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"},
+          {name:"Culling Knife", tag:"", atk:"4", hit:"4+", wnd:"2+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Staying Useful (Passive):", text:"While any of this unit's Gnoblar or Frost Sabre tokens are on the battlefield, this unit has Ward (5+). Each time you make a successful ward roll for this unit, remove 1 of its tokens. If its Frost Sabre token has been removed, it can no longer attack with Frost Sabre's Fangs."},
+          {label:"No Slacking! (Your Hero phase):", text:"Pick a friendly Infantry unit wholly within 12\" of this unit. Roll a dice: on a 3+, add the result to the target's control score until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Ironguts", count:"2 models · fielded twice (x2 units), plus a 3rd unit of 4 models", kw:"Infantry",
+        stats:{m:"6\"", h:"4", sv:"5+", ctrl:"2"},
+        equip:"Every model is equipped with: Irongut Weapon.",
+        melee:[
+          {name:"Irongut Weapon", tag:"", atk:"3", hit:"4+", wnd:"2+", rnd:"2", dmg:"3"}
+        ],
+        abilities:[
+          {label:"Down to the Ironguts (Passive):", text:"Ignore negative modifiers to this unit's control score."}
+        ],
+        keywords:"INFANTRY, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Gnoblars", count:"12 models", kw:"Infantry",
+        stats:{m:"5\"", h:"1", sv:"6+", ctrl:"1"},
+        equip:"Every model is equipped with: Sharp Stuff; Motley Assortment of Weapons.",
+        ranged:[
+          {name:"Sharp Stuff", tag:"", range:"8\"", atk:"1", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        melee:[
+          {name:"Motley Assortment of Weapons", tag:"", atk:"1", hit:"5+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"No Shortage of Volunteers (End of any turn):", text:"You can return D3 models to this unit."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, OGOR MAWTRIBES, DESTRUCTION"
+      },
+      {
+        name:"Gnoblar Scraplauncher", count:"1 model", kw:"War Machine",
+        stats:{m:"9\"", h:"9", sv:"4+", ctrl:"2"},
+        equip:"This model is equipped with: Piles of Old Scrap; Scrappers' Stabbers; Rhinox's Sharp Horns.",
+        ranged:[
+          {name:"Piles of Old Scrap", tag:"Crit (Auto-wound)", range:"24\"", atk:"3D6", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        melee:[
+          {name:"Scrappers' Stabbers", tag:"", atk:"7", hit:"5+", wnd:"5+", rnd:"-", dmg:"1"},
+          {name:"Rhinox's Sharp Horns", tag:"Companion", atk:"2", hit:"4+", wnd:"2+", rnd:"1", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"Rain of Scrap (Your Shooting phase):", text:"Pick an enemy unit that had any models slain this turn by this unit's shooting attacks. Subtract 1 from hit rolls for the target's attacks for the rest of the turn."}
+        ],
+        keywords:"WAR MACHINE, OGOR MAWTRIBES, DESTRUCTION"
+      }
+    ],
+    regimentAbilities:[
+      {name:"It's a Hard Life",
+        when:"Any Hero phase.",
+        effect:"Pick a friendly Gnoblars unit within your general's combat range. Roll a D3: on a 2+, Heal (X) your general where X equals the roll, and 1 model in that Gnoblars unit is slain."},
+      {name:"Frenzied Artillery",
+        when:"Passive.",
+        effect:"If the unmodified charge roll for a friendly Gnoblar Scraplauncher is 6+, add 3 to the Attacks characteristic of that unit's Companion weapons for the rest of the turn."}
+    ],
+    enhancements:[
+      {name:"Savage Instincts", badge:"General only",
+        effect:"(Reaction: you declared a Fight ability for your general) Pick a friendly unit that has not used a Fight ability this turn and is within your general's combat range. That unit can be picked to use a Fight ability immediately after your general's Fight ability has been resolved."},
+      {name:"Massive Bulk", badge:"General only",
+        effect:"(Passive) Add 2 to the Health characteristic of your general."},
+      {name:"Nasty Trap", badge:"General only",
+        effect:"(Reaction: once per battle, your Movement phase) Pick an enemy unit within 12\" of your general. Give the target your general's Trap token. While the target has a Trap token, each time it is picked to use a Move or Charge ability, roll a dice — on a 4+, that ability has no effect and the Trap token is removed."},
+      {name:"Veteran Hunter", badge:"General only",
+        effect:"(Once per battle, any Hero phase) Pick an enemy unit within 12\" of your general. For the rest of the turn, add 1 to the Rend characteristic of your general's combat attacks that target that unit."}
+    ],
+    factionRule: {
+      title:"Better Late Than Never",
+      when:"A unit of Ironguts with 4 models is not set up during the deployment phase.",
+      effects:[
+        "From the third battle round, that unit can use Let's Get Stuck In (Your Movement phase): set it up wholly within friendly territory, wholly within 6\" of the battlefield edge, and not in combat."
+      ]
+    }
+  },
+  yndrastaspearhead: {
+    id:'yndrastaspearhead', name:"Yndrasta's Spearhead", faction:"Stormcast Eternals", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Stormcast Eternals · AoS 4th Edition",
+    roster:"1x Yndrasta, the Celestial Spear (General) · 1x Knight-Vexillor · 3x Annihilators · 2x Vanquishers (5 models each) · 1x Stormstrike Chariot.",
+    units:[
+      {
+        name:"Yndrasta, the Celestial Spear", count:"1 model (General)", kw:"Hero · Infantry · Fly",
+        stats:{m:"12\"", h:"8", sv:"3+", ctrl:"2"},
+        ward:"6+",
+        equip:"This model is equipped with: Thengavar; Blade of the High Heavens.",
+        ranged:[
+          {name:"Thengavar", tag:"Shoot in Combat", range:"12\"", atk:"1", hit:"3+", wnd:"2+", rnd:"2", dmg:"4"}
+        ],
+        melee:[
+          {name:"Blade of the High Heavens", tag:"", atk:"5", hit:"3+", wnd:"3+", rnd:"2", dmg:"3"}
+        ],
+        abilities:[
+          {label:"Champion of Sigmar (Once per battle, any Combat phase):", text:"This unit has Ward (5+) this phase."}
+        ],
+        keywords:"HERO, INFANTRY, FLY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Knight-Vexillor", count:"1 model", kw:"Hero · Infantry",
+        stats:{m:"5\"", h:"6", sv:"3+", ctrl:"5"},
+        equip:"This model is equipped with: Sigmarite Warblade.",
+        melee:[
+          {name:"Sigmarite Warblade", tag:"", atk:"4", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Banner of the Reforged (Your Hero phase):", text:"Pick a friendly unit wholly within 12\" of this unit to be the target. Heal (D3) the target. In addition, add 3 to that unit's control score until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Annihilators", count:"3 models", kw:"Infantry",
+        stats:{m:"4\"", h:"3", sv:"2+", ctrl:"1"},
+        equip:"Every model is equipped with: Meteoric Hammer.",
+        melee:[
+          {name:"Meteoric Hammer", tag:"", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Force of a Falling Star (Any Charge phase):", text:"If this unit charged this phase and the unmodified charge roll was 8+, pick an enemy unit within 1\" of it to be the target. The target has Strike-last this turn."}
+        ],
+        keywords:"INFANTRY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Vanquishers", count:"5 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"5\"", h:"2", sv:"3+", ctrl:"1"},
+        equip:"Every model is equipped with: Celestial Greatsword.",
+        melee:[
+          {name:"Celestial Greatsword", tag:"", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Lightning Strikes (Passive):", text:"Add 1 to the Damage characteristic of this unit's Celestial Greatswords for attacks that target an enemy unit that has 5 or more models."}
+        ],
+        keywords:"INFANTRY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Stormstrike Chariot", count:"1 model", kw:"War Machine",
+        stats:{m:"10\"", h:"10", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Great Stormbow; Stormstrike Axe; Gryph-chargers' Beaks and Claws.",
+        ranged:[
+          {name:"Great Stormbow", tag:"", range:"18\"", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        melee:[
+          {name:"Stormstrike Axe", tag:"", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"},
+          {name:"Gryph-chargers' Beaks and Claws", tag:"Companion", atk:"6", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Azyr Unleashed (Any Charge phase):", text:"If this unit charged this phase, pick an enemy unit within 1\" of it to be the target and roll a dice. On a 2+, inflict D3 mortal damage on the target."}
+        ],
+        keywords:"WAR MACHINE, STORMCAST ETERNALS, ORDER"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Drive Them Back",
+        when:"Any Combat phase.",
+        effect:"Pick any number of friendly units that are both contesting an objective and in combat. Each of those units can make a pile-in move. For each unit that did so, pick an enemy unit within 1\" of it and roll a dice — on a 4+, inflict 1 mortal damage on that enemy unit."},
+      {name:"Defend to the Last",
+        when:"Passive.",
+        effect:"Friendly units have Ward (6+) while they are contesting an objective you control."}
+    ],
+    enhancements:[
+      {name:"The Prime Huntress", badge:"General only",
+        effect:"(Passive) The Damage characteristic of Thengavar (Yndrasta's spear) is 2D6 for attacks that target a Monster."},
+      {name:"Dazzling Radiance", badge:"General only",
+        effect:"(Once per battle, your Movement phase) Pick your general to use this ability if they were set up this phase. You can return 1 slain model to each friendly unit wholly within 12\" of your general."},
+      {name:"Strike with the Tempest's Rage", badge:"General only",
+        effect:"(Passive) Your general has Strike-first if they charged in the same turn."},
+      {name:"Hawk of the Celestial Skies", badge:"General only",
+        effect:"(Once per battle, any Combat phase) Until the end of the phase, add 1 to hit rolls for attacks made by friendly units while they are wholly within 12\" of your general."}
+    ],
+    factionRule: {
+      title:"Scions of the Storm",
+      when:"Yndrasta and your Annihilators unit are not set up during the deployment phase.",
+      effects:[
+        "From the third battle round onward, they can use Lightning-Strike Arrival (Your Movement phase, Core): set up this unit anywhere on the battlefield more than 6\" from all enemy units."
+      ]
+    }
+  },
+  vigilantbrotherhood: {
+    id:'vigilantbrotherhood', name:"Vigilant Brotherhood", faction:"Stormcast Eternals", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Stormcast Eternals · AoS 4th Edition",
+    roster:"1x Lord-Vigilant on Gryph-stalker (General) · 1x Lord-Veritant · 3x Prosecutors · 5x Liberators.",
+    units:[
+      {
+        name:"Lord-Vigilant on Gryph-stalker", count:"1 model (General)", kw:"Hero · Cavalry",
+        stats:{m:"12\"", h:"8", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Hallowed Greataxe; Gryph-stalker's Beak and Talons.",
+        melee:[
+          {name:"Hallowed Greataxe", tag:"", atk:"5", hit:"3+", wnd:"3+", rnd:"2", dmg:"2"},
+          {name:"Gryph-stalker's Beak and Talons", tag:"Companion", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Deliver Judgement (Once per battle, any Combat phase):", text:"Pick a friendly non-Hero unit wholly within 12\" of this unit to be the target. The target can use 2 Fight abilities this phase. After the first is used, however, the target has Strike-last for the rest of the phase."},
+          {label:"Plan the Attack (Your Hero phase):", text:"Pick an objective you do not control. For the rest of the turn, add 1 to hit rolls for combat attacks made by friendly units that target enemy units contesting that objective."}
+        ],
+        keywords:"HERO, CAVALRY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Lord-Veritant", count:"1 model", kw:"Hero · Priest · Infantry",
+        stats:{m:"5\"", h:"6", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Staff of Abjuration; Judgement Blade.",
+        melee:[
+          {name:"Staff of Abjuration", tag:"", atk:"1", hit:"3+", wnd:"3+", rnd:"1", dmg:"3"},
+          {name:"Judgement Blade", tag:"Anti-Wizard (+1 Rend) · Anti-Priest (+1 Rend)", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"Cleansing Fires (Your Hero phase):", text:"Pick a visible enemy unit within 12\" of this unit to be the target, then make a chanting roll of D6. On a 3+, roll a dice for each model in the target unit — for each 5+, inflict 1 mortal damage on the target unit."},
+          {label:"Sense Unholy Sorcery (Passive):", text:"This unit's Gryph-crow is a token. This unit has Ward (5+) while its Gryph-crow is on the battlefield. If you make an unmodified ward roll of 1 for this unit, remove its Gryph-crow from the battlefield."}
+        ],
+        keywords:"HERO, PRIEST, INFANTRY, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Prosecutors", count:"3 models", kw:"Infantry · Fly",
+        stats:{m:"12\"", h:"2", sv:"3+", ctrl:"1"},
+        equip:"Every model is equipped with: Stormcall Javelin.",
+        ranged:[
+          {name:"Stormcall Javelin", tag:"", range:"10\"", atk:"1", hit:"3+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Stormcall Javelin", tag:"", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Heralds of Righteousness (Passive):", text:"When you make a charge roll for this unit, roll 1 additional dice."},
+          {label:"Skirmishers (Passive):", text:"This unit has a coherency range of 2\"."}
+        ],
+        keywords:"INFANTRY, FLY, REINFORCEMENTS, STORMCAST ETERNALS, ORDER"
+      },
+      {
+        name:"Liberators", count:"5 models (4 with Warhammer, 1 with Grandhammer)", kw:"Infantry",
+        stats:{m:"5\"", h:"2", sv:"3+", ctrl:"1"},
+        equip:"4 models are equipped with: Warhammer. 1 model is equipped with: Grandhammer.",
+        melee:[
+          {name:"Warhammer", tag:"Crit (Mortal)", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"},
+          {name:"Grandhammer", tag:"Crit (Mortal)", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Stalwart Defenders (Passive):", text:"Add 3 to this unit's control score while it contests an objective wholly within friendly territory."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, STORMCAST ETERNALS, ORDER"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Strike Where Needed",
+        when:"Once per battle, reaction: you declared a Retreat ability.",
+        effect:"Used by the unit using that Retreat ability. No mortal damage is inflicted on that unit by that Retreat ability. In addition, that unit can still use Charge abilities this turn even though it used a Retreat ability."},
+      {name:"Blaze of Glory",
+        when:"Once per battle, any Combat phase.",
+        effect:"Pick a friendly unit that is in combat. Until the end of the phase, each time a model in that unit is slain, make a vengeance roll of D6 — on a 4+, inflict 1 mortal damage on an enemy unit in combat with that unit."}
+    ],
+    enhancements:[
+      {name:"Hallowed Scrolls", badge:"General only",
+        effect:"(Passive) Your general has Ward (5+)."},
+      {name:"Morrda's Talon", badge:"General only",
+        effect:"(Passive) Your general's Hallowed Greataxe has Crit (Mortal)."},
+      {name:"Quicksilver Draught", badge:"General only",
+        effect:"(Once per battle, any Combat phase) Your general has Strike-first this phase."},
+      {name:"Null Pendant", badge:"General only",
+        effect:"(Once per battle, end of any turn) Roll a dice for each enemy unit contesting the same objective as your general. On a 2+, subtract the roll from the control score of that enemy unit this turn."}
+    ],
+    factionRule: {
+      title:"Holy Orders",
+      when:"During the battle, you can use the following abilities:",
+      effects:[
+        "Storm Charge (Once per battle, your Charge phase): pick a friendly unit that is not in combat — that unit can use Charge abilities this turn even if it used a Run ability in the same turn.",
+        "Shield of Azyr (Once per battle, your Hero phase): pick a friendly unit — until the start of your next turn, that unit has Ward (5+)."
+      ]
+    }
+  },
+  skyhammertaskforce: {
+    id:'skyhammertaskforce', name:"Skyhammer Task Force", faction:"Kharadron Overlords", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Kharadron Overlords · AoS 4th Edition",
+    roster:"1x Arkanaut Admiral (General) · 2x Arkanaut Company (5 models each) · 3x Skywardens · 1x Arkanaut Frigate.",
+    units:[
+      {
+        name:"Arkanaut Admiral", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"4\"", h:"6", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Masterwork Volley Pistol; Skalammer.",
+        ranged:[
+          {name:"Masterwork Volley Pistol", tag:"Shoot in Combat", range:"10\"", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        melee:[
+          {name:"Skalammer", tag:"", atk:"3", hit:"3+", wnd:"2+", rnd:"1", dmg:"3"}
+        ],
+        abilities:[
+          {label:"Always Take What You Are Owed (Your Hero phase):", text:"Pick a friendly Arkanaut Company unit wholly within 12\" of this unit to be the target. Add D6 to the target's control score until the start of your next turn."}
+        ],
+        keywords:"HERO, INFANTRY, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Arkanaut Company", count:"5 models · fielded twice (x2 units)", kw:"Infantry",
+        equip:"One unit has 4 Arkanauts with Privateer Pistol and Arkanaut Cutter, and 1 with a Skypike. The other has 3 with Privateer Pistol and Arkanaut Cutter, 1 with Aethermatic Volley Gun and Gun Butt, and 1 with Light Skyhook and Gun Butt.",
+        stats:{m:"4\"", h:"1", sv:"4+", ctrl:"1"},
+        ranged:[
+          {name:"Privateer Pistol", tag:"Shoot in Combat", range:"10\"", atk:"2", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Aethermatic Volley Gun", tag:"", range:"15\"", atk:"2D6", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Light Skyhook", tag:"", range:"15\"", atk:"1", hit:"4+", wnd:"3+", rnd:"2", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Arkanaut Cutter", tag:"", atk:"2", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Gun Butt", tag:"", atk:"1", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"},
+          {name:"Skypike", tag:"Crit (Mortal)", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Glory-Seekers (Passive):", text:"Add 1 to hit rolls for attacks made by this unit that target a unit contesting an objective."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Skywardens", count:"3 models (2 with Vulcaniser Pistol and Skypike, 1 with Aethermatic Volley Gun and Gun Butt)", kw:"Infantry · Fly",
+        stats:{m:"12\"", h:"2", sv:"4+", ctrl:"1"},
+        ranged:[
+          {name:"Vulcaniser Pistol", tag:"Shoot in Combat", range:"10\"", atk:"3", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"},
+          {name:"Aethermatic Volley Gun", tag:"", range:"15\"", atk:"2D6", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        melee:[
+          {name:"Skypike", tag:"Crit (Mortal)", atk:"2", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"},
+          {name:"Gun Butt", tag:"", atk:"1", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Timed Charges (End of any turn):", text:"Pick an enemy unit in combat with this unit to be the target, then roll a dice. On a 2+, inflict 1 mortal damage on the target, and this unit can immediately use the 'Retreat' ability without any mortal damage being inflicted on it."}
+        ],
+        keywords:"INFANTRY, FLY, REINFORCEMENTS, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Arkanaut Frigate", count:"1 model", kw:"War Machine · Fly",
+        stats:{m:"12\"", h:"15", sv:"3+", ctrl:"5"},
+        equip:"This model is equipped with: Heavy Skyhook; Aethershot Carbines; Crew's Boarding Weapons.",
+        ranged:[
+          {name:"Heavy Skyhook", tag:"", range:"24\"", atk:"2", hit:"4+", wnd:"3+", rnd:"2", dmg:"D6"},
+          {name:"Aethershot Carbines", tag:"Shoot in Combat", range:"12\"", atk:"4", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        melee:[
+          {name:"Crew's Boarding Weapons", tag:"", atk:"8", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Battle Damaged (Passive):", text:"While this unit has 10 or more damage points, the Attacks characteristic of its Heavy Skyhook is 1."},
+          {label:"Bomb Racks (Once per battle, your Movement phase):", text:"Pick an enemy unit that this unit passed across this phase to be the target, then roll a dice. On a 2+, inflict D3 mortal damage on the target."}
+        ],
+        keywords:"WAR MACHINE, FLY, KHARADRON OVERLORDS, ORDER"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Assault Boat",
+        when:"Once per battle, your Movement phase.",
+        effect:"Pick a friendly unit that was transported this turn to use this ability. That unit can still use Charge abilities later in the turn."},
+      {name:"There's No Reward Without Risk",
+        when:"Once per battle, reaction: you declared a Charge ability for a unit wholly within 12\" of your general.",
+        effect:"You can re-roll the charge roll for that Charge ability."},
+      {name:"Disengage",
+        when:"Once per battle, your Movement phase.",
+        effect:"Pick a friendly Arkanaut Frigate to use this ability. If that unit uses a Retreat ability this phase, no mortal damage is inflicted on it and it can still use Shoot abilities later in the turn."}
+    ],
+    enhancements:[
+      {name:"Masterwrought Armour", badge:"General only",
+        effect:"(Passive) Your general has Ward (6+)."},
+      {name:"Flask of Vintage Gorogna", badge:"General only",
+        effect:"(Once per battle, any Hero phase) Heal (D6) your general."},
+      {name:"Leave No Duardin Behind", badge:"General only",
+        effect:"(Once per battle, your Hero phase) Pick a friendly Arkanaut Company unit wholly within 12\" of your general and roll a dice for each slain model from that unit. For each 4+, you can return 1 slain model to that unit."}
+    ],
+    factionRule: {
+      title:"Ply the Skies",
+      when:"Reaction: you declared a non-Charge Move ability for an Arkanaut Frigate.",
+      effects:[
+        "Used by the Arkanaut Frigate that is using that Move ability. Pick a friendly Infantry unit that is wholly within the combat range of that Arkanaut Frigate and not in combat, to be transported. Remove that Infantry unit from the battlefield.",
+        "When the Arkanaut Frigate ends its move, set up the Infantry unit on the battlefield again, wholly within the combat range of the Arkanaut Frigate and not in combat. A unit cannot use Charge abilities if it was transported in the same turn."
+      ]
+    }
+  },
+  grundstoktrailblazers: {
+    id:'grundstoktrailblazers', name:"Grundstok Trailblazers", faction:"Kharadron Overlords", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Kharadron Overlords · AoS 4th Edition",
+    roster:"1x Endrinmaster with Dirigible Suit (General) · 5x Grundstok Thunderers · 1x Grundstok Gunhauler · 3x Endrinriggers.",
+    units:[
+      {
+        name:"Endrinmaster with Dirigible Suit", count:"1 model (General)", kw:"Hero · Infantry · Fly",
+        stats:{m:"12\"", h:"8", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Aethercannon; Dirigible Suit Weapon Battery; Upgraded Aethermatic Saw.",
+        ranged:[
+          {name:"Aethercannon", tag:"", range:"18\"", atk:"1", hit:"3+", wnd:"3+", rnd:"2", dmg:"3"},
+          {name:"Dirigible Suit Weapon Battery", tag:"", range:"12\"", atk:"6", hit:"3+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        melee:[
+          {name:"Upgraded Aethermatic Saw", tag:"", atk:"4", hit:"3+", wnd:"3+", rnd:"2", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Endrinmaster Extraordinaire (Your Hero phase):", text:"Pick a friendly unit with the Fly keyword wholly within 12\" of this unit to be the target. Roll a D3. On a 2+, Heal (X) the target where X is equal to the roll."}
+        ],
+        keywords:"HERO, INFANTRY, FLY, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Grundstok Thunderers", count:"5 models", kw:"Infantry",
+        equip:"1 model armed with Aethershot Rifle; 1 with Aetheric Fumigator; 1 with Decksweeper; 1 with Grundstok Mortar; 1 with Aethercannon. Every model also armed with a Gun Butt.",
+        stats:{m:"4\"", h:"2", sv:"3+", ctrl:"1"},
+        ranged:[
+          {name:"Aethershot Rifle", tag:"", range:"18\"", atk:"2", hit:"3+", wnd:"4+", rnd:"1", dmg:"1"},
+          {name:"Aetheric Fumigator or Decksweeper", tag:"Shoot in Combat", range:"10\"", atk:"5", hit:"3+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Grundstok Mortar or Aethercannon", tag:"", range:"18\"", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        melee:[
+          {name:"Gun Butt", tag:"", atk:"1", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Bewilderblast Rounds (Once per battle (army), any Shooting phase):", text:"Pick an enemy unit that had any damage points allocated to it this phase by this unit's shooting attacks to be the target. Subtract D6 from the target's control score for the rest of the turn."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Grundstok Gunhauler", count:"1 model", kw:"War Machine · Fly",
+        stats:{m:"14\"", h:"10", sv:"2+", ctrl:"2"},
+        equip:"This model is equipped with: Sky Ordnance; Boarding Weapons.",
+        ranged:[
+          {name:"Sky Ordnance", tag:"", range:"15\"", atk:"3", hit:"4+", wnd:"3+", rnd:"2", dmg:"3"}
+        ],
+        melee:[
+          {name:"Boarding Weapons", tag:"", atk:"4", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Gunhauler Overwatch (Any Combat phase):", text:"Pick an enemy unit that charged this turn and is in combat with this unit to be the target. Roll a D3. On a 2+, inflict an amount of mortal damage on the target equal to the roll."}
+        ],
+        keywords:"WAR MACHINE, FLY, KHARADRON OVERLORDS, ORDER"
+      },
+      {
+        name:"Endrinriggers", count:"3 models (1 with Rapid Fire Rivet Gun, 1 with Aethermatic Volley Gun, 1 with Skyrigger Heavy Weapon)", kw:"Infantry · Fly",
+        stats:{m:"12\"", h:"2", sv:"3+", ctrl:"1"},
+        ranged:[
+          {name:"Rapid Fire Rivet Gun", tag:"Shoot in Combat", range:"10\"", atk:"3", hit:"3+", wnd:"4+", rnd:"1", dmg:"1"},
+          {name:"Aethermatic Volley Gun", tag:"Crit (2 Hits)", range:"15\"", atk:"2D6", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Skyrigger Heavy Weapon", tag:"Anti-Monster (+1 Rend)", range:"15\"", atk:"1", hit:"4+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Aethermatic Saw", tag:"Anti-charge (+1 Rend)", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"},
+          {name:"Gun Butt", tag:"", atk:"1", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Cloudweaving Skyfarers (Enemy Movement phase):", text:"Roll a dice. On a 3+, this unit can use the 'Normal Move' ability as if it were your movement phase."}
+        ],
+        keywords:"INFANTRY, FLY, REINFORCEMENTS, KHARADRON OVERLORDS, ORDER"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Rapid Relocation",
+        when:"Once per battle (army), your Movement phase.",
+        effect:"Pick a friendly unit with Fly to be the target. Remove the target from the battlefield and set it up again anywhere on the battlefield more than 6\" from all enemy units. The target cannot use Charge abilities this turn."},
+      {name:"Celestium-Burst Bomblets",
+        when:"Any Combat phase.",
+        effect:"Pick an enemy unit in combat with your general to be the target. Roll a dice. On a 3+, ward rolls cannot be made for the target for the rest of the turn."}
+    ],
+    enhancements:[
+      {name:"Prospector and Pioneer", badge:"General only",
+        effect:"(Passive) Add 2 to your general's control score."},
+      {name:"Emergency Fuel Injection Pods", badge:"General only",
+        effect:"(Once per battle (army), any Combat phase) Your general has Strike-first for the rest of the turn."},
+      {name:"Extraction Fail-Safes", badge:"General only",
+        effect:"(Passive) Subtract 1 from the number of damage points inflicted on this unit when it uses a Retreat ability."}
+    ],
+    factionRule: {
+      title:"Gunhauler Escort / Propeller Downdraught",
+      when:"Two passive battle traits are available to this Spearhead.",
+      effects:[
+        "Gunhauler Escort (Passive): subtract 1 from hit rolls for attacks that target friendly Kharadron Overlords Infantry units while they are wholly within 6\" of a friendly Grundstok Gunhauler.",
+        "Propeller Downdraught (Passive): subtract 1 from charge rolls for enemy units while they are within 9\" of a friendly Grundstok Gunhauler."
+      ]
+    }
+  },
+  deathrattletombhost: {
+    id:'deathrattletombhost', name:"Deathrattle Tomb Host", faction:"Soulblight Gravelords", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Soulblight Gravelords · AoS 4th Edition",
+    roster:"1x Wight King (General) · 10x Barrow Guard · 5x Barrow Knights · 2x Deathrattle Skeletons (10 models each).",
+    units:[
+      {
+        name:"Wight King", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"4\"", h:"5", sv:"3+", ctrl:"2"},
+        ward:"6+",
+        equip:"This model is equipped with: Baleful Tomb Blade.",
+        melee:[
+          {name:"Baleful Tomb Blade", tag:"Crit (Mortal)", atk:"5", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"King of Shambling Bones (Your Hero phase):", text:"Pick a friendly Deathrattle unit wholly within 12\" of this unit to be the target. Roll a dice: on a 2+, add 1 to hit rolls for combat attacks made by the target for the rest of the turn."}
+        ],
+        keywords:"HERO, INFANTRY, SOULBLIGHT GRAVELORDS, DEATHRATTLE, DEATH"
+      },
+      {
+        name:"Barrow Guard", count:"10 models", kw:"Infantry",
+        stats:{m:"4\"", h:"1", sv:"4+", ctrl:"1"},
+        ward:"6+",
+        equip:"Every model is equipped with: Wight Blade.",
+        melee:[
+          {name:"Wight Blade", tag:"Crit (Mortal)", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Guardians of the King (Passive):", text:"While your general is within this unit's combat range, both this unit and your general have Ward (5+)."}
+        ],
+        keywords:"INFANTRY, SOULBLIGHT GRAVELORDS, DEATHRATTLE, DEATH"
+      },
+      {
+        name:"Barrow Knights", count:"5 models", kw:"Cavalry",
+        stats:{m:"10\"", h:"3", sv:"4+", ctrl:"1"},
+        ward:"6+",
+        equip:"Every model is equipped with: Barrow Lance; Skeletal Steed's Hooves and Teeth.",
+        melee:[
+          {name:"Barrow Lance", tag:"Crit (Mortal) · Charge (+1 Damage)", atk:"2", hit:"4+", wnd:"3+", rnd:"1", dmg:"1"},
+          {name:"Skeletal Steed's Hooves and Teeth", tag:"Companion", atk:"2", hit:"5+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Cursed to Rise Once More (End of any turn):", text:"You can return 1 slain model to this unit."}
+        ],
+        keywords:"CAVALRY, SOULBLIGHT GRAVELORDS, DEATHRATTLE, DEATH"
+      },
+      {
+        name:"Deathrattle Skeletons", count:"10 models · fielded twice (x2 units)", kw:"Infantry",
+        stats:{m:"4\"", h:"1", sv:"5+", ctrl:"1"},
+        ward:"6+",
+        equip:"Every model is equipped with: Ancient Weapon.",
+        melee:[
+          {name:"Ancient Weapon", tag:"", atk:"2", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Skeleton Legion (End of any turn):", text:"You can return D3 slain models to this unit."}
+        ],
+        keywords:"INFANTRY, SOULBLIGHT GRAVELORDS, DEATHRATTLE, DEATH"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Overwhelming Hordes",
+        when:"Passive.",
+        effect:"Add 1 to wound rolls for combat attacks made by friendly non-Hero units that target a unit that has fewer models than the attacking unit."},
+      {name:"Deathmarch",
+        when:"Once per turn (army), your Hero phase.",
+        effect:"Pick a friendly non-Hero unit that is not in combat to be the target. For the rest of the turn, add 1\" to the target's Move characteristic and add 3 to its control score."}
+    ],
+    enhancements:[
+      {name:"Shyishan Blade", badge:"General only",
+        effect:"(Passive) The Rend characteristic of your general's Baleful Tomb Blade is 2."},
+      {name:"Stolen Animus", badge:"General only",
+        effect:"(Passive) Each time your general scores a critical hit, Heal (2) your general after the Attack ability has been resolved."},
+      {name:"Propelled by Hate", badge:"General only",
+        effect:"(Your Charge phase) Pick another friendly unit wholly within 12\" of your general to be the target. You can re-roll charge rolls for the target for the rest of the turn."},
+      {name:"Soul-Drain Pendant", badge:"General only",
+        effect:"(Once per battle, any Combat phase) Pick an enemy unit in combat with your general to be the target. Roll a dice. On a 2+, the target has Strike-last for the rest of the turn."}
+    ],
+    factionRule: {
+      title:"The Unquiet Dead / Aura of Antiquity",
+      when:"One of your Deathrattle Skeletons units is not set up during the deployment phase.",
+      effects:[
+        "From the third battle round onward, it can use The Rising Dead (Your Movement phase): set up this unit anywhere on the battlefield wholly within 3\" of a battlefield edge and more than 6\" from all enemy units.",
+        "Aura of Antiquity (Once per turn (army), any Combat phase): pick an enemy unit in combat with any friendly units to be the target. Roll a dice — on a 3+, subtract 1 from the Rend characteristic of the target's melee weapons until the start of your next turn."
+      ]
+    }
+  },
+  darkoathraiders: {
+    id:'darkoathraiders', name:"Darkoath Raiders", faction:"Slaves to Darkness", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Slaves to Darkness · AoS 4th Edition",
+    roster:"1x Darkoath Warqueen (General) · 10x Darkoath Savagers (incl. 1 Godspeaker) · 5x Darkoath Fellriders · 10x Darkoath Marauders.",
+    units:[
+      {
+        name:"Darkoath Warqueen", count:"1 model (General)", kw:"Hero · Infantry",
+        stats:{m:"5\"", h:"5", sv:"5+", ctrl:"2"},
+        ward:"5+",
+        equip:"This model is equipped with: Rune-etched Axe.",
+        melee:[
+          {name:"Rune-etched Axe", tag:"Crit (Mortal)", atk:"5", hit:"4+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Oath of Supremacy (Your Hero phase):", text:"Pick a friendly unit wholly within 12\" of your general to be the target. Until the start of your next turn, add 1 to hit rolls for attacks made by the target."}
+        ],
+        keywords:"HERO, INFANTRY, SLAVES TO DARKNESS, CHAOS"
+      },
+      {
+        name:"Darkoath Savagers", count:"10 models (1 is a Godspeaker)", kw:"Infantry",
+        stats:{m:"5\"", h:"1", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Darkoath Weapons.",
+        melee:[
+          {name:"Darkoath Weapons", tag:"Crit (Mortal)", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Visions of Glory (Your Hero phase):", text:"If this unit includes a Godspeaker, roll 8 dice. For each 6, until the start of your next turn, you can re-roll 1 hit roll, 1 wound roll, 1 run roll or 1 save roll for this unit."}
+        ],
+        keywords:"INFANTRY, SLAVES TO DARKNESS, CHAOS"
+      },
+      {
+        name:"Darkoath Fellriders", count:"5 models", kw:"Cavalry",
+        stats:{m:"12\"", h:"3", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Fellrider Blades; Warsteed's Hooves.",
+        melee:[
+          {name:"Fellrider Blades", tag:"Charge (+1 Damage)", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"},
+          {name:"Warsteed's Hooves", tag:"Companion", atk:"2", hit:"5+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Swift Attackers (Passive):", text:"Subtract 1 from hit rolls for shooting attacks that target this unit."}
+        ],
+        keywords:"CAVALRY, REINFORCEMENTS, SLAVES TO DARKNESS, CHAOS"
+      },
+      {
+        name:"Darkoath Marauders", count:"10 models", kw:"Infantry",
+        stats:{m:"5\"", h:"1", sv:"5+", ctrl:"1"},
+        equip:"Every model is equipped with: Raider Weapons.",
+        melee:[
+          {name:"Raider Weapons", tag:"", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Glorious Death (Passive):", text:"While this unit is wholly within 12\" of your general, each time a model in this unit is slain by a combat attack and that model was in combat with the attacking unit, roll a dice. On a 5+, inflict 1 mortal damage on the attacking unit after the Fight ability has been resolved."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, SLAVES TO DARKNESS, CHAOS"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Rage of Arkhar",
+        when:"Once per turn (army), any Combat phase.",
+        effect:"Pick a friendly unit in combat to be the target. For the rest of the turn, add 1 to the Rend characteristic of the target's melee weapons (does not affect Companion weapons)."},
+      {name:"Fearless Invaders",
+        when:"Once per turn (army), your Movement phase.",
+        effect:"Pick a friendly unit in combat to be the target. If the target uses a Retreat ability this turn, no mortal damage is inflicted on it and it can still use Charge abilities later in the turn."}
+    ],
+    enhancements:[
+      {name:"Bloodthirsty Blade", badge:"General only",
+        effect:"(Passive) The Rend characteristic of your general's Rune-etched Axe is 2."},
+      {name:"Godshadow Talisman", badge:"General only",
+        effect:"(Passive) Your general has Ward (4+)."},
+      {name:"Champion of Raids", badge:"General only",
+        effect:"(Your Charge phase) Pick another friendly unit wholly within 12\" of your general to be the target. The target can re-roll charge rolls for the rest of the turn."},
+      {name:"Fell Ritualist", badge:"General only",
+        effect:"(Passive) Each time you draw battle tactic cards, if your general is on the battlefield, you can choose to draw 1 additional battle tactic card, then put 1 of your battle tactic cards in your hand back at the bottom of your battle tactic deck."}
+    ],
+    factionRule: {
+      title:"Oaths of Darkness",
+      when:"The Darkoath are roving barbarian raiders who seek to prove their might by swearing oaths of bloodshed and murder to the Dark Gods.",
+      effects:[
+        "You can reveal 1 battle tactic card in your hand to your opponent. If you do so, that battle tactic card becomes your oath for the rest of the turn.",
+        "While this battle tactic card is your oath, you can still use the command on it, or attempt to score the battle tactic on it, as normal.",
+        "If you score the battle tactic on your oath this turn, your oath is fulfilled — instead of discarding the card, it is placed to one side but you can still use the command on it. Once you do so, it is discarded as normal. Fulfilled oaths placed to one side this way do not count towards the 3 battle tactic cards you can have in your hand.",
+        "If you use the command on your oath before it is scored, it is discarded as normal. At the end of the turn, if the oath is still in your hand and has not been fulfilled, it ceases to be your oath."
+      ]
+    }
+  },
+  snarlpackhuntaz: {
+    id:'snarlpackhuntaz', name:"Snarlpack Huntaz", faction:"Gloomspite Gitz", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Gloomspite Gitz · AoS 4th Edition",
+    roster:"1x Snarlboss (General) · 1x Wolfgit Retinue (2 models) · 2x Snarlpack Cavalry (3 models each) · 2x Sunsteala Wheelas.",
+    units:[
+      {
+        name:"Snarlboss", count:"1 model (General)", kw:"Hero · Cavalry",
+        stats:{m:"12\"", h:"5", sv:"5+", ctrl:"2"},
+        equip:"This model is equipped with: Boss Loppa; Snarlfang's Slavering Jaws.",
+        melee:[
+          {name:"Boss Loppa", tag:"", atk:"5", hit:"4+", wnd:"4+", rnd:"1", dmg:"2"},
+          {name:"Snarlfang's Slavering Jaws", tag:"Companion", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Great Snarlin' Howl (Once per turn (army), your Hero phase):", text:"Pick this unit and another friendly unit within this unit's combat range to be the targets. Roll a dice. On a 3+, add 1 to the Attacks characteristic of the targets' Companion melee weapons for the rest of the turn."}
+        ],
+        keywords:"HERO, CAVALRY, GLOOMSPITE GITZ, DESTRUCTION, GITMOB"
+      },
+      {
+        name:"Wolfgit Retinue", count:"2 models", kw:"Cavalry",
+        stats:{m:"12\"", h:"2", sv:"5+", ctrl:"1"},
+        equip:"1 model is armed with a Grot Bow and Snarlfang's Slavering Jaws, and 1 model is armed with a Stabbin' Stikka and Snarlfang's Slavering Jaws.",
+        ranged:[
+          {name:"Grot Bow", tag:"", range:"15\"", atk:"2", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        melee:[
+          {name:"Stabbin' Stikka", tag:"", atk:"2", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"},
+          {name:"Snarlfang's Slavering Jaws", tag:"Companion", atk:"2", hit:"4+", wnd:"3+", rnd:"-", dmg:"2"}
+        ],
+        abilities:[
+          {label:"I Got Dis, Boss (Passive):", text:"While a friendly Snarlboss is within this unit's combat range, both this unit and that Snarlboss have Ward (5+)."}
+        ],
+        keywords:"CAVALRY, GLOOMSPITE GITZ, DESTRUCTION, GITMOB"
+      },
+      {
+        name:"Snarlpack Cavalry", count:"3 models · fielded twice (x2 units)", kw:"Cavalry",
+        stats:{m:"12\"", h:"3", sv:"4+", ctrl:"1"},
+        equip:"Every model is equipped with: Pointy Skewas; Giant Snarlfang's Jaws.",
+        melee:[
+          {name:"Pointy Skewas", tag:"Charge (+1 Damage)", atk:"4", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"},
+          {name:"Giant Snarlfang's Jaws", tag:"Companion", atk:"3", hit:"4+", wnd:"3+", rnd:"-", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Frazzleburned Scrap (Once per turn (army), any Combat phase):", text:"If this unit charged this turn, it has Strike-first for the rest of the turn."}
+        ],
+        keywords:"CAVALRY, GLOOMSPITE GITZ, DESTRUCTION, GITMOB"
+      },
+      {
+        name:"Sunsteala Wheelas", count:"1 model · fielded twice (x2 units)", kw:"War Machine",
+        stats:{m:"12\"", h:"6", sv:"4+", ctrl:"2"},
+        equip:"This model is equipped with: Grot Bow; Wheela Slicers and Stabbin' Stikka; Snarlfangs' Slavering Jaws.",
+        ranged:[
+          {name:"Grot Bow", tag:"", range:"15\"", atk:"2", hit:"4+", wnd:"5+", rnd:"-", dmg:"1"}
+        ],
+        melee:[
+          {name:"Wheela Slicers and Stabbin' Stikka", tag:"", atk:"4", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"},
+          {name:"Snarlfangs' Slavering Jaws", tag:"Companion", atk:"4", hit:"4+", wnd:"3+", rnd:"-", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Careening Destruction (Your Movement phase):", text:"This unit can move a distance up to its Move characteristic. It can pass through other models and the combat ranges of enemy units, but cannot end that move in combat. Then, pick up to 1 enemy Infantry unit that this unit passed across during that move to be the target. Inflict D3 mortal damage on the target. (This unit can use this ability even if it is in combat.)"}
+        ],
+        keywords:"WAR MACHINE, GLOOMSPITE GITZ, DESTRUCTION, GITMOB"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Flankin' Force",
+        when:"Once per battle, start of the first battle round.",
+        effect:"Pick up to 2 friendly units. Remove them from the battlefield and set them up again anywhere on the battlefield more than 6\" from all enemy units."},
+      {name:"Frazzleboom",
+        when:"Passive.",
+        effect:"Each time a friendly War Machine is destroyed, before removing it from play, pick an enemy unit within 3\" of that War Machine and roll a D3. On a 2+, inflict an amount of mortal damage on that unit equal to the roll."}
+    ],
+    enhancements:[
+      {name:"Kunnin' as a Snarlfang", badge:"General only",
+        effect:"(Once per battle, any Combat phase) For the rest of the turn, add 1 to the Rend characteristic of melee weapons used by friendly units while they are wholly within 12\" of the bearer."},
+      {name:"Glare of Frazzlegit", badge:"General only",
+        effect:"(Once per battle, any Combat phase) Pick an enemy unit in combat with your general to be the target. Subtract 1 from hit rolls for attacks made by the target for the rest of the turn."},
+      {name:"Sunsteala Shard", badge:"General only",
+        effect:"(Once per battle, enemy Shooting phase) For the rest of the turn, friendly units cannot be targeted by shooting attacks while they are wholly within 6\" of this unit, unless the attacking unit is in combat with the target unit."},
+      {name:"Devious Backstabba", badge:"General only",
+        effect:"(End of any turn) Pick an enemy Hero in combat with this unit to be the target. Roll a D3. On a 2+, inflict an amount of mortal damage on the target equal to the roll."}
+    ],
+    factionRule: {
+      title:"Fast as Frazzlegit",
+      when:"The Gitmob packs are always on the move, a speeding melange of howling Snarlfangs and cackling grots.",
+      effects:[
+        "Friendly units can use Charge abilities even if they used a Retreat ability in the same turn.",
+        "No mortal damage is inflicted on friendly units by Retreat abilities."
+      ]
+    }
   }
 };
 
@@ -609,6 +1807,124 @@ function weaponRowsAos(list, ranged){
   return list.map(w=>`<tr><td>${w.name}${w.tag?`<span class="tags">${w.tag}</span>`:''}</td>${ranged?`<td>${w.range}</td>`:''}<td>${w.atk}</td><td>${w.hit}</td><td>${w.wnd}</td><td>${w.rnd}</td><td>${w.dmg}</td></tr>`).join('');
 }
 
+/* ============ OWNED + PHOTOS (Supabase) ============ */
+function photoSectionHtml(unitName){
+  const photos = photosState[unitName] || [];
+  return `
+    <div class="photo-section">
+      <div class="ps-label">My Models</div>
+      <div class="photo-row">
+        ${photos.map(p=>`
+          <div class="photo-thumb">
+            <a href="${p.photo_url}" target="_blank" rel="noopener"><img src="${p.photo_url}" loading="lazy"></a>
+            <button class="del" data-photo-id="${p.id}" data-unit="${escAttr(unitName)}" title="Remove photo">✕</button>
+          </div>
+        `).join('')}
+        <label class="photo-add">
+          <span class="plus">+</span>Add
+          <input type="file" accept="image/*" capture="environment" style="display:none" data-unit="${escAttr(unitName)}" class="photo-input">
+        </label>
+      </div>
+    </div>
+  `;
+}
+
+function escAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+
+async function loadForceExtras(forceId){
+  photosState = {};
+  if(!sb) return;
+  try{
+    const {data: photoRows} = await sb.from('model_photos').select('*').eq('force_id', forceId).order('created_at');
+    (photoRows||[]).forEach(r=>{
+      if(!photosState[r.unit_name]) photosState[r.unit_name] = [];
+      photosState[r.unit_name].push(r);
+    });
+  }catch(e){ console.error('Supabase load failed', e); }
+  renderUnits();
+}
+
+// Force-level ownership: which Combat Patrol / Spearhead boxes you actually own
+let forceOwnedState = {}; // forceId -> boolean
+
+async function loadForceOwnedState(){
+  forceOwnedState = {};
+  if(!sb) return;
+  try{
+    const {data} = await sb.from('owned_items').select('*').is('unit_name', null);
+    (data||[]).forEach(r=> forceOwnedState[r.force_id] = r.owned);
+  }catch(e){ console.error('Supabase force-owned load failed', e); }
+}
+
+async function toggleForceOwned(forceId, btnEl){
+  const newVal = !forceOwnedState[forceId];
+  forceOwnedState[forceId] = newVal;
+  renderForceList();
+  if(!sb) return;
+  try{
+    const {data: existing} = await sb.from('owned_items').select('id').eq('force_id',forceId).is('unit_name', null).maybeSingle();
+    if(existing){
+      await sb.from('owned_items').update({owned:newVal, updated_at:new Date().toISOString()}).eq('id', existing.id);
+    } else {
+      await sb.from('owned_items').insert({force_id:forceId, unit_name:null, owned:newVal});
+    }
+  }catch(e){ console.error('Supabase force-owned save failed', e); }
+}
+
+async function uploadPhoto(forceId, unitName, file){
+  if(!sb){ alert('Photo sync is not connected.'); return; }
+  const path = `${forceId}/${unitName.replace(/[^a-zA-Z0-9]/g,'_')}/${Date.now()}_${file.name}`;
+  try{
+    const {error: upErr} = await sb.storage.from('model-photos').upload(path, file);
+    if(upErr){ alert('Upload failed: ' + upErr.message); return; }
+    const {data: urlData} = sb.storage.from('model-photos').getPublicUrl(path);
+    const {data: inserted, error: insErr} = await sb.from('model_photos')
+      .insert({force_id:forceId, unit_name:unitName, photo_url:urlData.publicUrl})
+      .select().single();
+    if(insErr){ console.error(insErr); return; }
+    if(!photosState[unitName]) photosState[unitName] = [];
+    photosState[unitName].push(inserted);
+    renderUnits();
+  }catch(e){ console.error('Upload failed', e); alert('Upload failed — check your connection and try again.'); }
+}
+
+async function deletePhoto(forceId, unitName, photoId){
+  const list = photosState[unitName] || [];
+  const idx = list.findIndex(p=> String(p.id) === String(photoId));
+  if(idx === -1) return;
+  const [removed] = list.splice(idx, 1);
+  renderUnits();
+  if(!sb) return;
+  try{
+    await sb.from('model_photos').delete().eq('id', photoId);
+    if(removed?.photo_url){
+      const marker = '/model-photos/';
+      const i = removed.photo_url.indexOf(marker);
+      if(i !== -1){
+        const path = decodeURIComponent(removed.photo_url.slice(i + marker.length));
+        await sb.storage.from('model-photos').remove([path]);
+      }
+    }
+  }catch(e){ console.error('Delete failed', e); }
+}
+
+function wireOwnedPhotoEvents(el, forceId){
+  el.querySelectorAll('.photo-input').forEach(input=>{
+    input.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(file) uploadPhoto(forceId, input.dataset.unit, file);
+      e.target.value = '';
+    });
+  });
+  el.querySelectorAll('.photo-thumb .del').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      deletePhoto(forceId, btn.dataset.unit, btn.dataset.photoId);
+    });
+  });
+}
+
+
 function renderUnits(){
   const el = document.getElementById('panel-units');
   const force = FORCES[currentForceId];
@@ -619,6 +1935,7 @@ function renderUnits(){
   el.querySelectorAll('.unit-head').forEach(h=>{
     h.addEventListener('click', ()=> h.closest('.unit-card').classList.toggle('open'));
   });
+  wireOwnedPhotoEvents(el, force.id);
 }
 
 function unitCard40k(u,i){
@@ -632,6 +1949,7 @@ function unitCard40k(u,i){
         <span class="chevron">▶</span>
       </div>
       <div class="unit-body">
+        ${photoSectionHtml(u.name)}
         <div class="statline">
           ${u.variants.length===1 ? statBlock(u.variants[0]) : ''}
         </div>
@@ -659,6 +1977,7 @@ function unitCardAos(u,i){
         <span class="chevron">▶</span>
       </div>
       <div class="unit-body">
+        ${photoSectionHtml(u.name)}
         <div class="statline">${statBlockAos(u.stats)}</div>
         ${u.ward?`<div class="invuln-pill">◆ Ward ${u.ward}</div><br>`:''}
         <div class="model-variant">${u.equip}</div>
@@ -801,17 +2120,30 @@ function renderHeader(){
 
 function renderForceList(){
   const el = document.getElementById('forceList');
-  el.innerHTML = Object.values(FORCES).map(f=>`
+  el.innerHTML = Object.values(FORCES).map(f=>{
+    const isOwned = !!forceOwnedState[f.id];
+    return `
     <div class="force-card ${f.id===currentForceId?'active':''}" data-force="${f.id}">
       <span>
         <div class="fc-name">${f.name}</div>
         <div class="fc-sub">${f.faction}</div>
       </span>
-      <span class="fc-badge">${f.type}</span>
+      <span class="fc-right">
+        <button class="owned-toggle ${isOwned?'owned':''}" data-owned-force="${f.id}">
+          <span class="dot"></span>${isOwned ? 'Owned' : 'Not Owned'}
+        </button>
+        <span class="fc-badge">${f.type}</span>
+      </span>
     </div>
-  `).join('');
+  `;}).join('');
   el.querySelectorAll('.force-card').forEach(card=>{
     card.addEventListener('click', ()=> selectForce(card.dataset.force));
+  });
+  el.querySelectorAll('.owned-toggle').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleForceOwned(btn.dataset.ownedForce, btn);
+    });
   });
 }
 
@@ -830,11 +2162,13 @@ function selectForce(id){
   renderForceList();
   closeForceModal();
   switchTab('units');
+  loadForceExtras(id);
 }
 
-function openForceModal(){
-  renderForceList();
+async function openForceModal(){
   document.getElementById('forceModal').classList.add('open');
+  await loadForceOwnedState();
+  renderForceList();
 }
 function closeForceModal(){
   document.getElementById('forceModal').classList.remove('open');
@@ -867,6 +2201,8 @@ document.getElementById('forceModalClose').addEventListener('click', closeForceM
 document.getElementById('forceModal').addEventListener('click', e=>{
   if(e.target.id === 'forceModal') closeForceModal();
 });
+loadForceExtras(currentForceId);
+loadForceOwnedState();
 </script>
 </body>
 </html>
