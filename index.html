@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14170f">
-<title>'Ardmob — Combat Patrol</title>
+<title>Combat Patrol Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -54,6 +54,9 @@
     padding:14px 16px 12px;
   }
   .brand{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .force-switcher{ display:flex; align-items:baseline; gap:8px; background:none; border:none; padding:0; cursor:pointer; text-align:left; }
+  .force-switcher .switcher-text{ display:flex; flex-direction:column; gap:2px; }
+  .force-switcher .switch-chevron{ color:var(--green-bright); font-size:12px; align-self:center; }
   .brand h1{
     font-family:'Bebas Neue', sans-serif;
     font-size:30px; letter-spacing:1px; margin:0; color:var(--green-bright);
@@ -193,14 +196,45 @@
   @media (max-width:599px){
     nav.tabs{ display:none; }
   }
+
+  .modal-overlay{
+    position:fixed; inset:0; z-index:50; background:rgba(10,12,7,0.75); backdrop-filter:blur(2px);
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-sheet{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid transparent; border-image:var(--stripe) 3;
+    border-radius:14px 14px 0 0; width:100%; max-width:720px; max-height:80vh; overflow-y:auto; padding:16px 16px 24px;
+    animation:slideup .18s ease;
+  }
+  @keyframes slideup{ from{transform:translateY(20px); opacity:.5;} to{transform:none; opacity:1;} }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .modal-head h2{ font-family:'Bebas Neue'; font-size:22px; color:var(--green-bright); margin:0; letter-spacing:.5px; }
+  .modal-close{ background:var(--surface3); border:1px solid var(--line); color:var(--bone); width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px; line-height:1; }
+  .force-card{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--surface2); border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:8px; cursor:pointer;
+  }
+  .force-card:active{ background:var(--surface3); }
+  .force-card.active{ border-color:var(--green); }
+  .force-card .fc-name{ font-family:'Bebas Neue'; font-size:18px; color:var(--bone); letter-spacing:.4px; }
+  .force-card .fc-sub{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
+  .force-card .fc-badge{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:var(--surface3); color:var(--muted); white-space:nowrap; }
+  .force-card.active .fc-badge{ background:var(--green); color:#0e1109; }
+  .force-empty-note{ font-size:12.5px; color:var(--muted-dim); line-height:1.6; padding:10px 4px 2px; }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1>'ARDMOB</h1>
-      <span class="sub">Combat Patrol · Orks · 11th Edition</span>
+      <button class="force-switcher" id="forceSwitcher">
+        <span class="switcher-text">
+          <h1 id="forceName">'ARDMOB</h1>
+          <span class="sub" id="forceSub">Combat Patrol · Orks · 11th Edition</span>
+        </span>
+        <span class="switch-chevron">▾</span>
+      </button>
     </div>
     <div class="search-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa085" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -220,9 +254,21 @@
 
 <nav class="bottom" id="tabsBottom"></nav>
 
+<div class="modal-overlay" id="forceModal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h2>Choose a Force</h2>
+      <button class="modal-close" id="forceModalClose">✕</button>
+    </div>
+    <div id="forceList"></div>
+    <div class="force-empty-note">More Combat Patrols and Spearhead forces can be added here — send over the data (spreadsheet or file) for another faction and it'll show up in this list.</div>
+  </div>
+</div>
+
 <script>
 /* ============ DATA ============ */
 let selectedEnhancement = null;
+let selectedRegimentAbility = null;
 
 const TABS = [
   {id:'units', label:'Units', icon:'M4 21V9l8-6 8 6v12h-5v-7H9v7H4z'},
@@ -231,7 +277,12 @@ const TABS = [
   {id:'glossary', label:'Glossary', icon:'M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4z'},
 ];
 
-const UNITS = [
+const FORCES = {
+  ardmob: {
+    id:'ardmob', name:"'Ardmob", faction:"Orks", type:"Combat Patrol", system:"40k",
+    subtitle:"Combat Patrol · Orks · 11th Edition",
+    roster:"1x Warboss (Warlord) · 1x Wierdboy · 2x Boyz · 10x Gretchin · 1x Wartrakk.",
+    units: [
   {
     name:"Warboss", count:"1 model", kw:"Character · Leader",
     variants:[
@@ -330,9 +381,8 @@ const UNITS = [
     ],
     keywords:"ARDMOB, MOUNTED, SPEED FREEKS"
   }
-];
-
-const STRATAGEMS = [
+],
+    stratagems: [
   {name:"Krump 'Em", cost:"1 CP",
     when:"Fight phase, when a friendly 'ARDMOB unit is selected to fight.",
     effect:"Your unit's melee attacks have +1 to Strength."},
@@ -342,7 +392,121 @@ const STRATAGEMS = [
   {name:"Get Stuck In", cost:"1 CP",
     when:"Your opponent's Shooting phase, when an enemy unit that targeted a friendly unengaged 'ARDMOB unit has shot.",
     effect:"Your unit can make a surge move of D6+1\"."}
-];
+],
+    enhancements: [
+  {name:"Rallying War Cry", badge:"Warboss only",
+    effect:"(Once per battle, per unit) In your Command phase, you can use this ability. If you do, return up to D3+2 destroyed bodyguard models to this unit."},
+  {name:"Extra Platin'", badge:"Wartrakk only",
+    effect:"This unit has a 3+ armour save and a 4+ invulnerable save."}
+],
+    detachmentRule: {
+  name:"Ard As Nails", cost:"1 DP",
+  effect:"Attacks that target a friendly 'ARDMOB unit with the Waaagh! active with a Strength greater than that friendly unit's Toughness have -1 to Wound rolls."
+},
+    disposition: { name:"Purge the Foe" },
+    factionRule: {
+  title:"Waaagh!",
+  when:"Once per battle.",
+  effects:[
+    "Units can charge after Advancing.",
+    "+1 Strength and +1 Attacks in melee.",
+    "5+ invulnerable save."
+  ]
+}
+  },
+  helforge: {
+    id:'helforge', name:"Helforge Host", faction:"Helsmiths of Hashut", type:"Spearhead", system:"aos",
+    subtitle:"Spearhead · Helsmiths of Hashut · AoS 4th Edition",
+    roster:"1x War Despot (General) · 1x Dominator Engine with Immolation Cannons · 1x Tormentor Bombard · 2x Infernal Cohort with Hashutite Spears (one with Gong Carrier).",
+    units:[
+      {
+        name:"War Despot", count:"1 model", kw:"Hero · Infantry",
+        stats:{m:"4\"", h:"6", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Daemonflame Glaive.",
+        melee:[
+          {name:"Daemonflame Glaive", tag:"Crit (Mortal)", atk:"5", hit:"3+", wnd:"3+", rnd:"1", dmg:"2"}
+        ],
+        abilities:[
+          {label:"Black-Hearted Conqueror (Passive):", text:"While this unit has any daemonic power points, friendly units with 0 daemonic power points count as having 1 daemonic power point while wholly within 6\" of and visible to this unit. For each daemonic power point this unit has, add 3\" to the range of this ability."}
+        ],
+        keywords:"HERO, INFANTRY, HELSMITHS OF HASHUT, DUARDIN, CHAOS"
+      },
+      {
+        name:"Infernal Cohort with Hashutite Spears", count:"5 models · fielded twice (one unit includes a Gong Carrier)", kw:"Infantry",
+        stats:{m:"4\"", h:"1", sv:"3+", ctrl:"1"},
+        equip:"Every model is equipped with: Hashutite Spear.",
+        melee:[
+          {name:"Hashutite Spear", tag:"Anti-Charge (+1 Rend)", atk:"2", hit:"3+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Strike the Gongs (Once per battle, any Hero phase):", text:"This unit's Gong Carrier (if any) is a token. You can remove its Gong Carrier from the battlefield and return D3 slain models to this unit."},
+          {label:"Daemonic Resilience (Passive):", text:"1 daemonic power point (DPP): this unit has WARD (6+). 2 DPP: WARD (5+). 3 DPP: WARD (5+) and ignore the first damage point allocated to this unit in each phase."}
+        ],
+        keywords:"INFANTRY, REINFORCEMENTS, HELSMITHS OF HASHUT, DUARDIN, CHAOS"
+      },
+      {
+        name:"Dominator Engine with Immolation Cannons", count:"1 model", kw:"War Machine",
+        stats:{m:"6\"", h:"10", sv:"2+", ctrl:"2"},
+        equip:"This model is equipped with: Immolation Cannons; Horns and Pummelling Strikes.",
+        ranged:[
+          {name:"Immolation Cannons", tag:"Shoot in Combat", range:"8\"", atk:"5", hit:"2+", wnd:"4+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Horns and Pummelling Strikes", tag:"", atk:"3", hit:"4+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        abilities:[
+          {label:"Daemonic Strength (Passive):", text:"For each daemonic power point this unit has: add 1\" to its Move characteristic, and add 1 to the Attacks characteristic of its weapons."}
+        ],
+        keywords:"WAR MACHINE, REINFORCEMENTS, HELSMITHS OF HASHUT, DUARDIN, CHAOS"
+      },
+      {
+        name:"Tormentor Bombard", count:"1 model", kw:"War Machine",
+        stats:{m:"4\"", h:"8", sv:"3+", ctrl:"2"},
+        equip:"This model is equipped with: Torrent of Ruinous Energy; Artillerist Weapons.",
+        ranged:[
+          {name:"Torrent of Ruinous Energy", tag:"Anti-Infantry (+1 Rend) · Anti-Cavalry (+1 Rend)", range:"30\"", atk:"4", hit:"3+", wnd:"3+", rnd:"1", dmg:"D3"}
+        ],
+        melee:[
+          {name:"Artillerist Weapons", tag:"", atk:"3", hit:"4+", wnd:"4+", rnd:"-", dmg:"1"}
+        ],
+        abilities:[
+          {label:"Calculated Trajectory (Passive):", text:"Add 1 to hit rolls for this unit's shooting attacks that target an enemy unit with 5 or more models that is more than 12\" from this unit."},
+          {label:"Ruinous Bombardment (Once per turn (army), your Shooting phase):", text:"If this unit used a Shoot ability this turn and all of its attacks targeted the same enemy unit, that enemy unit is the target — plus a number of enemy units within 6\" of it equal to this unit's daemonic power points, as additional targets. Roll a dice for each target; on a 3+, subtract 3 from that target's control score for the rest of the turn."}
+        ],
+        keywords:"WAR MACHINE, HELSMITHS OF HASHUT, DUARDIN, CHAOS"
+      }
+    ],
+    regimentAbilities:[
+      {name:"Grinding Advance",
+        when:"Once per battle, Deployment phase.",
+        effect:"Pick up to 2 friendly Infernal Cohort units. Each can immediately move up to 3\" but cannot use Charge abilities in the first battle round."},
+      {name:"Suppressive Bombardment",
+        when:"Once per turn, your Shooting phase.",
+        effect:"Pick an enemy Infantry unit that had damage points allocated to it this turn by a friendly Tormentor Bombard's shooting. Until the start of your next turn, subtract 1 from the number of dice rolled for its charge rolls (minimum 1)."}
+    ],
+    enhancements:[
+      {name:"Scroll of Petrification", badge:"General only",
+        effect:"(Once per battle, any Hero phase) For the rest of the turn, your general has WARD (2+) but cannot use abilities or be picked as the target of friendly abilities."},
+      {name:"Talisman of Obsidian", badge:"General only",
+        effect:"(Passive) Ignore the first damage point allocated to your general in each phase."},
+      {name:"Chalice of Darkness", badge:"General only",
+        effect:"(Once per battle, your Shooting phase) Pick a visible enemy unit within 12\" of your general. Inflict D3 mortal damage on it."},
+      {name:"Amulet of Burning Hate", badge:"General only",
+        effect:"(Once per battle, any Combat phase) For the rest of the turn, your general's attacks score critical hits on unmodified hit rolls of 5+."}
+    ],
+    factionRule: {
+      title:"Harness Daemonic Power",
+      when:"Once per turn (army), your Hero phase.",
+      effects:[
+        "Remove all daemonic power points from each friendly unit.",
+        "Gain a number of daemonic power points equal to the current battle round number plus 1.",
+        "Allocate your daemonic power points to friendly units — each unit can have a maximum of 3 — then all unallocated points are lost."
+      ]
+    }
+  }
+};
+
+let currentForceId = 'ardmob';
 
 const CORE_STRATS = [
   {name:"Command Re-roll", cost:"1 CP",
@@ -380,31 +544,8 @@ const CORE_STRATS = [
     effect:"Pick one friendly unengaged unit within 12\" of an enemy unit (a Vehicle can only be picked if it's a Character or Walker) — it can charge. Choose one: Leap to Defend (base cost) — can only target an enemy unit that itself charged this turn; or Into the Fray (+1 CP) — can target any enemy unit within 6\", with the charge roll capped at 6."}
 ];
 
-const ENHANCEMENTS = [
-  {name:"Rallying War Cry", badge:"Warboss only",
-    effect:"(Once per battle, per unit) In your Command phase, you can use this ability. If you do, return up to D3+2 destroyed bodyguard models to this unit."},
-  {name:"Extra Platin'", badge:"Wartrakk only",
-    effect:"This unit has a 3+ armour save and a 4+ invulnerable save."}
-];
 
-const DETACHMENT_RULE = {
-  name:"Ard As Nails", cost:"1 DP",
-  effect:"Attacks that target a friendly 'ARDMOB unit with the Waaagh! active with a Strength greater than that friendly unit's Toughness have -1 to Wound rolls."
-};
-
-const FORCE_DISPOSITION = { name:"Purge the Foe" };
-
-const WAAAGH = {
-  title:"Waaagh!",
-  when:"Once per battle.",
-  effects:[
-    "Units can charge after Advancing.",
-    "+1 Strength and +1 Attacks in melee.",
-    "5+ invulnerable save."
-  ]
-};
-
-const GLOSSARY = [
+const GLOSSARY_40K = [
   {term:"Lethal Hits", def:"Each unmodified Critical Hit scored by this weapon automatically scores a Wound on the target, without needing to make a Wound roll."},
   {term:"Sustained Hits X", def:"Each Critical Hit scores X additional hits on the target."},
   {term:"Cleave X", def:"Each time an attack is made with this weapon, worsen the target's armour save by X when resolving that attack."},
@@ -421,14 +562,32 @@ const GLOSSARY = [
   {term:"Invulnerable Save (InSv)", def:"A saving throw that applies regardless of a weapon's AP characteristic. Use whichever save (armour or invulnerable) is better for the attack being resolved."}
 ];
 
+const GLOSSARY_AOS = [
+  {term:"Health", def:"How many damage points can be allocated to a unit before a model in it is slain (replaces 'Wounds' from earlier editions)."},
+  {term:"Control", def:"How well each model in the unit can contest objectives (replaces 'Bravery' from earlier editions)."},
+  {term:"Save", def:"The roll needed to equal or exceed to save a model from harm — lower is better."},
+  {term:"Ward (X+)", def:"After damage is allocated, roll a D6 per damage point in the pool: on a roll equal to or exceeding X, remove that damage point. If a unit has more than one Ward, only the lowest value applies."},
+  {term:"Rend X", def:"Worsen the target's Save characteristic by X when resolving this attack (e.g. Rend 1 turns a 3+ save into a 4+)."},
+  {term:"Crit (Mortal)", def:"On a critical hit, this attack inflicts mortal damage (bypassing normal Hit/Wound/Save resolution for that attack) equal to its Damage characteristic."},
+  {term:"Crit (2 Hits)", def:"A critical hit scores 2 hits instead of 1."},
+  {term:"Anti-KEYWORD (+X Rend)", def:"Against a unit with the matching keyword, this weapon's Rend characteristic is increased by X."},
+  {term:"Reinforcements", def:"A keyword that lets an army include an additional unit of this type beyond the normal unit limit in some formats (relevant to Spearhead army construction)."},
+  {term:"Shoot in Combat", def:"This ranged weapon can be used even while the bearer is in combat, which ranged weapons normally cannot do."},
+  {term:"Companion", def:"A weapon that belongs to a mount, crew, or attached model rather than the unit's main profile — used automatically alongside the unit's other attacks where noted."},
+  {term:"Daemonic Power Points (DPP)", def:"A resource tracked per-unit for Helsmiths of Hashut, gained and allocated via the 'Harness Daemonic Power' battle trait; several unit abilities scale with how many a unit currently has."},
+  {term:"Mortal Damage", def:"Damage that is allocated directly to a unit, bypassing Hit rolls, Wound rolls, and Save rolls (Ward saves can still apply unless stated otherwise)."}
+];
+
 /* ============ RENDER ============ */
 function svgIcon(path){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="${path}"/></svg>`; }
 
 function renderTabs(){
   const top = document.getElementById('tabsTop');
   const bottom = document.getElementById('tabsBottom');
-  top.innerHTML = TABS.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${t.label}</button>`).join('');
-  bottom.innerHTML = TABS.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${svgIcon(t.icon)}<span>${t.label}</span></button>`).join('');
+  const force = FORCES[currentForceId];
+  const tabs = TABS.map(t=> t.id==='strats' ? {...t, label: force.system==='aos' ? 'Regiment' : 'Stratagems'} : t);
+  top.innerHTML = tabs.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${t.label}</button>`).join('');
+  bottom.innerHTML = tabs.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${svgIcon(t.icon)}<span>${t.label}</span></button>`).join('');
   [...top.children, ...bottom.children].forEach(btn=>{
     btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
   });
@@ -440,15 +599,30 @@ function switchTab(id){
   window.scrollTo({top:0, behavior:'instant'});
 }
 
-function weaponRows(list){
+function weaponRows40k(list){
   if(!list || !list.length) return '';
   return list.map(w=>`<tr><td>${w.name}${w.tag?`<span class="tags">${w.tag}</span>`:''}</td><td>${w.range}</td><td>${w.a}</td><td>${w.bs}</td><td>${w.s}</td><td>${w.ap}</td><td>${w.d}</td></tr>`).join('');
 }
 
+function weaponRowsAos(list, ranged){
+  if(!list || !list.length) return '';
+  return list.map(w=>`<tr><td>${w.name}${w.tag?`<span class="tags">${w.tag}</span>`:''}</td>${ranged?`<td>${w.range}</td>`:''}<td>${w.atk}</td><td>${w.hit}</td><td>${w.wnd}</td><td>${w.rnd}</td><td>${w.dmg}</td></tr>`).join('');
+}
+
 function renderUnits(){
   const el = document.getElementById('panel-units');
-  el.innerHTML = `<div class="section-head"><h2>Datasheets</h2><div class="rule"></div></div>` +
-  UNITS.map((u,i)=>`
+  const force = FORCES[currentForceId];
+  const isAos = force.system === 'aos';
+  el.innerHTML = `<div class="section-head"><h2>${isAos ? 'Warscrolls' : 'Datasheets'}</h2><div class="rule"></div></div>` +
+  force.units.map((u,i)=> isAos ? unitCardAos(u,i) : unitCard40k(u,i)).join('');
+
+  el.querySelectorAll('.unit-head').forEach(h=>{
+    h.addEventListener('click', ()=> h.closest('.unit-card').classList.toggle('open'));
+  });
+}
+
+function unitCard40k(u,i){
+  return `
     <div class="unit-card" data-idx="${i}">
       <div class="unit-head">
         <div class="unit-title">
@@ -465,17 +639,41 @@ function renderUnits(){
         ${u.invuln?`<div class="invuln-pill">◆ ${u.invuln}</div><br>`:''}
         <div class="model-variant">${u.equip}</div>
         ${u.note?`<div class="model-variant">${u.note}</div>`:''}
-        ${u.ranged?.length?`<table class="weapons"><caption>Ranged Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>BS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows(u.ranged)}</tbody></table>`:''}
-        ${u.melee?.length?`<table class="weapons"><caption>Melee Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>WS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows(u.melee)}</tbody></table>`:''}
+        ${u.ranged?.length?`<table class="weapons"><caption>Ranged Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>BS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows40k(u.ranged)}</tbody></table>`:''}
+        ${u.melee?.length?`<table class="weapons"><caption>Melee Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>WS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows40k(u.melee)}</tbody></table>`:''}
         ${u.abilities.map(a=>`<div class="ability">${a.core?`<span class="core">CORE:</span> ${a.text}`:`<span class="label">${a.label}</span> ${a.text}`}</div>`).join('')}
         <div class="keywords"><b>Keywords:</b> ${u.keywords}${u.ledBy?`<br><b>Led by:</b> ${u.ledBy}`:''}</div>
       </div>
     </div>
-  `).join('');
+  `;
+}
 
-  el.querySelectorAll('.unit-head').forEach(h=>{
-    h.addEventListener('click', ()=> h.closest('.unit-card').classList.toggle('open'));
-  });
+function unitCardAos(u,i){
+  return `
+    <div class="unit-card" data-idx="${i}">
+      <div class="unit-head">
+        <div class="unit-title">
+          <span class="name">${u.name}</span>
+          <span class="kw">${u.count} · ${u.kw}</span>
+        </div>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="unit-body">
+        <div class="statline">${statBlockAos(u.stats)}</div>
+        ${u.ward?`<div class="invuln-pill">◆ Ward ${u.ward}</div><br>`:''}
+        <div class="model-variant">${u.equip}</div>
+        ${u.ranged?.length?`<table class="weapons"><caption>Ranged Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>Atk</th><th>Hit</th><th>Wnd</th><th>Rnd</th><th>Dmg</th></tr></thead><tbody>${weaponRowsAos(u.ranged, true)}</tbody></table>`:''}
+        ${u.melee?.length?`<table class="weapons"><caption>Melee Weapons</caption><thead><tr><th>Weapon</th><th>Atk</th><th>Hit</th><th>Wnd</th><th>Rnd</th><th>Dmg</th></tr></thead><tbody>${weaponRowsAos(u.melee, false)}</tbody></table>`:''}
+        ${u.abilities.map(a=>`<div class="ability"><span class="label">${a.label}</span> ${a.text}</div>`).join('')}
+        <div class="keywords"><b>Keywords:</b> ${u.keywords}</div>
+      </div>
+    </div>
+  `;
+}
+
+function statBlockAos(s){
+  const labels = {m:'M', h:'H', sv:'Sv', ctrl:'Ctrl'};
+  return Object.keys(labels).map(k=>`<div class="stat"><div class="k">${labels[k]}</div><div class="v">${s[k]}</div></div>`).join('');
 }
 
 function statBlock(v){
@@ -492,12 +690,42 @@ function stratCard(s){
 
 function renderStrats(){
   const el = document.getElementById('panel-strats');
+  const force = FORCES[currentForceId];
+
+  if(force.system === 'aos'){
+    el.innerHTML = `
+      <div class="section-head"><h2>Regiment Abilities</h2><div class="rule"></div></div>
+      <div class="rule-line" style="color:var(--muted); font-size:12px; margin:-2px 0 10px;">Pick one for the battle — tap to select.</div>
+      ${force.regimentAbilities.map((s,i)=>`
+        <div class="info-card selectable" data-reg="${i}">
+          <div class="row1"><h3>${s.name}</h3></div>
+          <div class="rule-line"><b>When:</b> ${s.when}</div>
+          <div class="rule-line"><b>Effect:</b> ${s.effect}</div>
+          <div class="select-indicator">
+            <span class="select-check">✓ Selected</span>
+            <span class="select-prompt">Tap to select</span>
+          </div>
+        </div>`).join('')}
+    `;
+    el.querySelectorAll('.info-card.selectable').forEach(card=>{
+      if(Number(card.dataset.reg) === selectedRegimentAbility) card.classList.add('selected');
+      card.addEventListener('click', ()=>{
+        const idx = Number(card.dataset.reg);
+        selectedRegimentAbility = (selectedRegimentAbility === idx) ? null : idx;
+        el.querySelectorAll('.info-card.selectable').forEach(c=>{
+          c.classList.toggle('selected', Number(c.dataset.reg) === selectedRegimentAbility);
+        });
+      });
+    });
+    return;
+  }
+
   el.innerHTML = `
     <div class="info-card" style="border-color:var(--yellow);">
       <div class="rule-line"><b>Reminder:</b> a unit can only be affected by one Stratagem per phase.</div>
     </div>
-    <div class="section-head"><h2>'Ardmob Stratagems</h2><div class="rule"></div></div>
-    ${STRATAGEMS.map(stratCard).join('')}
+    <div class="section-head"><h2>${force.name} Stratagems</h2><div class="rule"></div></div>
+    ${force.stratagems.map(stratCard).join('')}
     <div class="section-head"><h2>Core Stratagems</h2><div class="rule"></div></div>
     ${CORE_STRATS.map(stratCard).join('')}
   `;
@@ -505,27 +733,31 @@ function renderStrats(){
 
 function renderFaction(){
   const el = document.getElementById('panel-faction');
+  const force = FORCES[currentForceId];
+  const fr = force.factionRule;
   el.innerHTML = `
     <div class="faction-rule-card">
-      <h2>${WAAAGH.title}</h2>
-      <div class="rule-line">${WAAAGH.when}</div>
-      <ul>${WAAAGH.effects.map(e=>`<li>${e}</li>`).join('')}</ul>
+      <h2>${fr.title}</h2>
+      <div class="rule-line">${fr.when}</div>
+      <ul>${fr.effects.map(e=>`<li>${e}</li>`).join('')}</ul>
     </div>
 
+    ${force.detachmentRule ? `
     <div class="section-head"><h2>Detachment Rule</h2><div class="rule"></div></div>
     <div class="info-card">
-      <div class="row1"><h3>${DETACHMENT_RULE.name}</h3><span class="cost">${DETACHMENT_RULE.cost}</span></div>
-      <div class="rule-line">${DETACHMENT_RULE.effect}</div>
-    </div>
+      <div class="row1"><h3>${force.detachmentRule.name}</h3><span class="cost">${force.detachmentRule.cost}</span></div>
+      <div class="rule-line">${force.detachmentRule.effect}</div>
+    </div>` : ''}
 
+    ${force.disposition ? `
     <div class="section-head"><h2>Force Disposition</h2><div class="rule"></div></div>
     <div class="info-card">
-      <div class="rule-line"><b>${FORCE_DISPOSITION.name}</b></div>
-    </div>
+      <div class="rule-line"><b>${force.disposition.name}</b></div>
+    </div>` : ''}
 
     <div class="section-head"><h2>Enhancements</h2><div class="rule"></div></div>
     <div class="rule-line" style="color:var(--muted); font-size:12px; margin:-2px 0 10px;">Tap the one you're taking — only one can be selected.</div>
-    ${ENHANCEMENTS.map((e,i)=>`
+    ${force.enhancements.map((e,i)=>`
       <div class="info-card selectable" data-enh="${i}">
         <div class="row1"><h3>${e.name}</h3><span class="default-badge">${e.badge}</span></div>
         <div class="rule-line">${e.effect}</div>
@@ -537,7 +769,7 @@ function renderFaction(){
 
     <div class="section-head"><h2>Roster</h2><div class="rule"></div></div>
     <div class="info-card">
-      <div class="rule-line">1x Warboss (Warlord) · 1x Wierdboy · 2x Boyz · 10x Gretchin · 1x Wartrakk.</div>
+      <div class="rule-line">${force.roster}</div>
     </div>
   `;
 
@@ -555,8 +787,57 @@ function renderFaction(){
 
 function renderGlossary(){
   const el = document.getElementById('panel-glossary');
+  const force = FORCES[currentForceId];
+  const glossary = force.system === 'aos' ? GLOSSARY_AOS : GLOSSARY_40K;
   el.innerHTML = `<div class="section-head"><h2>Rules Glossary</h2><div class="rule"></div></div>` +
-    GLOSSARY.map(g=>`<div class="info-card"><div class="glossary-term">${g.term}</div><div class="rule-line" style="margin-top:5px;">${g.def}</div></div>`).join('');
+    glossary.map(g=>`<div class="info-card"><div class="glossary-term">${g.term}</div><div class="rule-line" style="margin-top:5px;">${g.def}</div></div>`).join('');
+}
+
+function renderHeader(){
+  const force = FORCES[currentForceId];
+  document.getElementById('forceName').textContent = force.name.toUpperCase();
+  document.getElementById('forceSub').textContent = force.subtitle;
+}
+
+function renderForceList(){
+  const el = document.getElementById('forceList');
+  el.innerHTML = Object.values(FORCES).map(f=>`
+    <div class="force-card ${f.id===currentForceId?'active':''}" data-force="${f.id}">
+      <span>
+        <div class="fc-name">${f.name}</div>
+        <div class="fc-sub">${f.faction}</div>
+      </span>
+      <span class="fc-badge">${f.type}</span>
+    </div>
+  `).join('');
+  el.querySelectorAll('.force-card').forEach(card=>{
+    card.addEventListener('click', ()=> selectForce(card.dataset.force));
+  });
+}
+
+function selectForce(id){
+  if(id === currentForceId){ closeForceModal(); return; }
+  currentForceId = id;
+  selectedEnhancement = null;
+  selectedRegimentAbility = null;
+  document.getElementById('search').value = '';
+  renderHeader();
+  renderTabs();
+  renderUnits();
+  renderStrats();
+  renderFaction();
+  renderGlossary();
+  renderForceList();
+  closeForceModal();
+  switchTab('units');
+}
+
+function openForceModal(){
+  renderForceList();
+  document.getElementById('forceModal').classList.add('open');
+}
+function closeForceModal(){
+  document.getElementById('forceModal').classList.remove('open');
 }
 
 /* ============ SEARCH ============ */
@@ -575,11 +856,17 @@ function applySearch(q){
 
 /* ============ INIT ============ */
 renderTabs();
+renderHeader();
 renderUnits();
 renderStrats();
 renderFaction();
 renderGlossary();
 document.getElementById('search').addEventListener('input', e=> applySearch(e.target.value));
+document.getElementById('forceSwitcher').addEventListener('click', openForceModal);
+document.getElementById('forceModalClose').addEventListener('click', closeForceModal);
+document.getElementById('forceModal').addEventListener('click', e=>{
+  if(e.target.id === 'forceModal') closeForceModal();
+});
 </script>
 </body>
 </html>
