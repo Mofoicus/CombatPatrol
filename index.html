@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14170f">
+<title>'Ardmob — Combat Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14170f;
+    --surface:#1c2116;
+    --surface2:#262d1c;
+    --surface3:#30381f;
+    --line:#3a4227;
+    --green:#7c9a2e;
+    --green-bright:#a4c94a;
+    --red:#b3311f;
+    --red-bright:#d64a30;
+    --yellow:#d9a520;
+    --bone:#ece7d4;
+    --muted:#9aa085;
+    --muted-dim:#6c7259;
+    --radius:10px;
+    --stripe: repeating-linear-gradient(135deg, var(--yellow) 0 10px, #14170f 10px 20px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #202714 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, #1a2510 0%, transparent 55%),
+      var(--bg);
+    color:var(--bone);
+    font-family:'Barlow', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--green); color:#0e1109; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--surface3); border-radius:4px; }
+
+  .app{ max-width:720px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding-bottom:78px; }
+
+  /* HEADER */
+  header.top{
+    position:sticky; top:0; z-index:20;
+    background:linear-gradient(180deg, #191e12 0%, #14170f 100%);
+    border-bottom:3px solid transparent;
+    border-image: var(--stripe) 3;
+    padding:14px 16px 12px;
+  }
+  .brand{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .brand h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:30px; letter-spacing:1px; margin:0; color:var(--green-bright);
+    text-shadow: 2px 2px 0 #0b0d07;
+  }
+  .brand .sub{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; }
+  .search-wrap{ margin-top:10px; position:relative; }
+  .search-wrap input{
+    width:100%; background:var(--surface); border:1px solid var(--line); color:var(--bone);
+    padding:10px 12px 10px 34px; border-radius:8px; font-family:'Barlow'; font-size:15px; font-weight:500;
+  }
+  .search-wrap input:focus{ outline:none; border-color:var(--green); }
+  .search-wrap svg{ position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.6; }
+
+  /* TABS */
+  nav.tabs{
+    display:flex; gap:6px; padding:10px 16px 0; overflow-x:auto; scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{ display:none; }
+  nav.tabs button{
+    flex:0 0 auto; background:var(--surface); border:1px solid var(--line); color:var(--muted);
+    font-family:'Bebas Neue'; font-size:16px; letter-spacing:.5px; padding:8px 14px 6px;
+    border-radius:7px 7px 0 0; cursor:pointer;
+  }
+  nav.tabs button.active{ background:var(--surface2); color:var(--green-bright); border-color:var(--green); border-bottom-color:var(--surface2); position:relative; top:1px; }
+
+  main{ padding:14px 16px 24px; flex:1; }
+  section.panel{ display:none; }
+  section.panel.active{ display:block; animation:fade .15s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;} }
+
+  .section-head{ display:flex; align-items:center; gap:10px; margin:18px 0 10px; }
+  .section-head:first-child{ margin-top:2px; }
+  .section-head h2{ font-family:'Bebas Neue'; font-size:20px; letter-spacing:.5px; color:var(--yellow); margin:0; white-space:nowrap; }
+  .section-head .rule{ flex:1; height:5px; background:var(--stripe); opacity:.55; border-radius:2px; }
+
+  /* UNIT CARDS */
+  .unit-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    margin-bottom:12px; overflow:hidden;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  }
+  .unit-head{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:12px 14px; cursor:pointer; background:linear-gradient(90deg, var(--surface2), var(--surface));
+  }
+  .unit-head:active{ background:var(--surface3); }
+  .unit-title{ display:flex; flex-direction:column; gap:2px; }
+  .unit-title .name{ font-family:'Bebas Neue'; font-size:21px; letter-spacing:.5px; color:var(--bone); }
+  .unit-title .kw{ font-size:11px; color:var(--muted-dim); letter-spacing:.5px; }
+  .chevron{ font-size:14px; color:var(--green-bright); transition:transform .15s; flex:0 0 auto; }
+  .unit-card.open .chevron{ transform:rotate(90deg); }
+  .unit-body{ display:none; padding:12px 14px 16px; border-top:1px solid var(--line); }
+  .unit-card.open .unit-body{ display:block; }
+
+  .statline{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:10px; }
+  .statline.short{ grid-template-columns:repeat(6,1fr); }
+  .stat{ background:var(--surface3); border:1px solid var(--line); border-radius:6px; text-align:center; padding:6px 2px; }
+  .stat .k{ font-size:9px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+  .stat .v{ font-family:'JetBrains Mono'; font-weight:700; font-size:16px; color:var(--green-bright); }
+  .invuln-pill{
+    display:inline-flex; align-items:center; gap:6px; background:var(--surface3); border:1px solid var(--yellow);
+    color:var(--yellow); font-family:'JetBrains Mono'; font-size:12px; font-weight:700; padding:4px 9px; border-radius:20px; margin-bottom:10px;
+  }
+  .model-variant{ font-size:12px; color:var(--muted); margin:2px 0 10px; line-height:1.5; }
+  .model-variant b{ color:var(--bone); }
+
+  table.weapons{ width:100%; border-collapse:collapse; margin-bottom:10px; font-size:12.5px; }
+  table.weapons caption{ text-align:left; font-family:'Bebas Neue'; letter-spacing:.5px; font-size:13px; color:var(--green-bright); padding-bottom:5px; }
+  table.weapons th{ text-align:center; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; padding:5px 4px; border-bottom:1px solid var(--line); }
+  table.weapons th:first-child{ text-align:left; }
+  table.weapons td{ text-align:center; padding:6px 4px; border-bottom:1px solid #23291a; font-family:'JetBrains Mono'; font-weight:500; color:var(--bone); }
+  table.weapons td:first-child{ text-align:left; font-family:'Barlow'; font-weight:600; color:var(--bone); }
+  table.weapons tr:last-child td{ border-bottom:none; }
+  .tags{ display:block; font-family:'Barlow'; font-size:10px; color:var(--yellow); font-weight:600; margin-top:1px; }
+
+  .ability{ margin-bottom:8px; font-size:13.5px; line-height:1.5; }
+  .ability .label{ font-weight:700; color:var(--green-bright); }
+  .ability .core{ font-weight:700; color:var(--yellow); }
+  .keywords{ margin-top:10px; font-size:11px; color:var(--muted-dim); line-height:1.6; }
+  .keywords b{ color:var(--muted); }
+
+  /* GENERIC CARD (stratagems / enhancements / secondaries / glossary) */
+  .info-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:10px;
+  }
+  .info-card .row1{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:5px; }
+  .info-card h3{ font-family:'Bebas Neue'; font-size:18px; letter-spacing:.4px; color:var(--bone); margin:0; }
+  .cost{ font-family:'JetBrains Mono'; font-weight:700; font-size:12px; color:#0e1109; background:var(--yellow); padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .kind{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  .flufftext{ font-size:12px; color:var(--muted); font-style:italic; margin-bottom:8px; line-height:1.5; }
+  .rule-line{ font-size:13.5px; line-height:1.55; margin-bottom:4px; }
+  .rule-line b{ color:var(--green-bright); }
+
+  .info-card.selectable{ cursor:pointer; transition:border-color .12s, background .12s; user-select:none; }
+  .info-card.selectable:active{ background:var(--surface3); }
+  .info-card.selectable .select-indicator{ margin-top:8px; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+  .info-card.selectable .select-check{ display:none; color:var(--green-bright); }
+  .info-card.selectable .select-prompt{ color:var(--muted-dim); }
+  .info-card.selectable.selected{ border-color:var(--green); background:linear-gradient(160deg, var(--surface2), var(--surface)); box-shadow:0 0 0 1px var(--green) inset; }
+  .info-card.selectable.selected .select-check{ display:inline; }
+  .info-card.selectable.selected .select-prompt{ display:none; }
+  .default-badge{ font-size:9.5px; letter-spacing:1px; text-transform:uppercase; color:var(--green-bright); border:1px solid var(--green); padding:2px 6px; border-radius:4px; }
+
+  .glossary-term{ font-family:'JetBrains Mono'; font-weight:700; color:var(--yellow); font-size:13.5px; }
+
+  .faction-rule-card{
+    background:linear-gradient(160deg, var(--surface2), var(--surface));
+    border:1px solid var(--green); border-radius:var(--radius); padding:16px; margin-bottom:16px;
+  }
+  .faction-rule-card h2{ font-family:'Bebas Neue'; font-size:26px; color:var(--green-bright); margin:0 0 8px; letter-spacing:1px; }
+  .faction-rule-card ul{ margin:8px 0 0; padding-left:18px; }
+  .faction-rule-card li{ font-size:13.5px; line-height:1.6; margin-bottom:4px; }
+
+  .empty{ text-align:center; color:var(--muted-dim); padding:30px 10px; font-size:13.5px; }
+
+  /* BOTTOM NAV */
+  nav.bottom{
+    position:fixed; bottom:0; left:0; right:0; z-index:30;
+    background:#12150d; border-top:3px solid transparent; border-image:var(--stripe) 3;
+    display:flex; max-width:720px; margin:0 auto;
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; color:var(--muted-dim); padding:9px 4px 8px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'Barlow'; font-weight:600; font-size:10.5px; letter-spacing:.3px; text-transform:uppercase;
+  }
+  nav.bottom button.active{ color:var(--green-bright); }
+  nav.bottom svg{ width:20px; height:20px; }
+
+  @media (min-width:600px){
+    nav.tabs{ display:flex; }
+    nav.bottom{ display:none; }
+    .app{ padding-bottom:0; }
+    .statline{ grid-template-columns:repeat(6,1fr); }
+  }
+  @media (max-width:599px){
+    nav.tabs{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>'ARDMOB</h1>
+      <span class="sub">Combat Patrol · Orks · 11th Edition</span>
+    </div>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa085" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Search weapons, abilities, rules…" autocomplete="off">
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabsTop"></nav>
+
+  <main>
+    <section class="panel" id="panel-units"></section>
+    <section class="panel" id="panel-strats"></section>
+    <section class="panel" id="panel-faction"></section>
+    <section class="panel" id="panel-glossary"></section>
+  </main>
+</div>
+
+<nav class="bottom" id="tabsBottom"></nav>
+
+<script>
+/* ============ DATA ============ */
+let selectedEnhancement = null;
+
+const TABS = [
+  {id:'units', label:'Units', icon:'M4 21V9l8-6 8 6v12h-5v-7H9v7H4z'},
+  {id:'strats', label:'Stratagems', icon:'M13 2L3 14h7l-1 8 11-14h-7l1-6z'},
+  {id:'faction', label:'Faction', icon:'M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21 8 13.5 2.5 9h7z'},
+  {id:'glossary', label:'Glossary', icon:'M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4z'},
+];
+
+const UNITS = [
+  {
+    name:"Warboss", count:"1 model", kw:"Character · Leader",
+    variants:[
+      {label:"Warboss", m:"6\"",t:"5",sv:"4+",w:"6",ld:"6+",oc:"1"}
+    ],
+    invuln:"5+ invulnerable save",
+    equip:"This model is equipped with: kustom shoota; kustom choppa.",
+    ranged:[
+      {name:"Kustom Shoota", tag:"Rapid Fire 2", range:"18\"", a:"4", bs:"5+", s:"4", ap:"0", d:"1"}
+    ],
+    melee:[
+      {name:"Kustom Choppa", tag:"Cleave 1", range:"Melee", a:"6", bs:"2+", s:"8", ap:"-2", d:"2"}
+    ],
+    abilities:[
+      {core:true, text:"Leader — can attach to 'Ardmob Boyz"},
+      {label:"Smash 'Em Up:", text:"In the Fight phase, when this unit is selected to fight, this unit's melee attacks have [LETHAL HITS] or [SUSTAINED HITS 1]."}
+    ],
+    keywords:"ARDMOB, CHARACTER, EXPLOSIVES, INFANTRY"
+  },
+  {
+    name:"Wierdboy", count:"1 model", kw:"Character · Psyker",
+    variants:[
+      {label:"Wierdboy", m:"6\"",t:"5",sv:"5+",w:"4",ld:"7+",oc:"1"}
+    ],
+    equip:"This model is equipped with: psychic powers; Waaagh! staff.",
+    ranged:[
+      {name:"Psychic Powers", tag:"Blast 1 · Psychic", range:"24\"", a:"D6+2", bs:"4+", s:"4", ap:"0", d:"1"},
+      {name:"Psychic Powers", tag:"Precision · Psychic", range:"24\"", a:"1", bs:"4+", s:"8", ap:"-3", d:"2"}
+    ],
+    melee:[
+      {name:"Waaagh! Staff — Bash", tag:"Psychic", range:"Melee", a:"3", bs:"3+", s:"8", ap:"-1", d:"2"},
+      {name:"Waaagh! Staff — Clobber", tag:"Devastating Wounds · Hazardous · Psychic", range:"Melee", a:"4", bs:"3+", s:"8", ap:"-2", d:"2"}
+    ],
+    abilities:[
+      {core:true, text:"Leader — can attach to 'Ardmob Boyz"},
+      {label:"Totem of Mork (Psychic):", text:"At the end of your Command phase, if this unit is controlling an objective, that objective is secured."}
+    ],
+    keywords:"ARDMOB, CHARACTER, INFANTRY, PSYKER"
+  },
+  {
+    name:"Boyz", count:"10 models (1 Boss Nob + 9 Boyz) · fielded twice (x2 units)", kw:"Mob",
+    variants:[
+      {label:"Boss Nob", m:"6\"",t:"5",sv:"5+",w:"2",ld:"7+",oc:"2"},
+      {label:"Boyz", m:"6\"",t:"5",sv:"5+",w:"1",ld:"7+",oc:"2"}
+    ],
+    equip:"The Boss Nob is equipped with: kustom shoota or slugga; big choppa. Every other model is equipped with: slugga or shoota; choppa.",
+    ranged:[
+      {name:"Kustom Shoota", tag:"Rapid Fire 2 · Boss Nob option", range:"18\"", a:"4", bs:"5+", s:"4", ap:"0", d:"1"},
+      {name:"Slugga", tag:"Close-Quarters", range:"12\"", a:"1", bs:"5+", s:"4", ap:"0", d:"1"},
+      {name:"Shoota", tag:"", range:"18\"", a:"2", bs:"5+", s:"4", ap:"0", d:"1"}
+    ],
+    melee:[
+      {name:"Big Choppa", tag:"Boss Nob", range:"Melee", a:"3", bs:"3+", s:"5", ap:"-1", d:"2"},
+      {name:"Choppa", tag:"", range:"Melee", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"}
+    ],
+    abilities:[
+      {label:"Grab Dat Scrap:", text:"While this unit is engaged, this unit has +1 to Objective Control."}
+    ],
+    keywords:"ARDMOB, EXPLOSIVES, INFANTRY, MOB",
+    ledBy:"Warboss or Wierdboy"
+  },
+  {
+    name:"Gretchin", count:"10 models", kw:"Grots",
+    variants:[
+      {label:"Gretchin", m:"6\"",t:"2",sv:"7+",w:"1",ld:"8+",oc:"1"}
+    ],
+    equip:"Every model is equipped with: blasta or Lobbin' Bombs; Scavenged Shivs.",
+    ranged:[
+      {name:"Blasta", tag:"Close-Quarters", range:"18\"", a:"1", bs:"4+", s:"3", ap:"0", d:"1"},
+      {name:"Lobbin' Bombs", tag:"Hazardous", range:"6\"", a:"1", bs:"4+", s:"4", ap:"-1", d:"1"}
+    ],
+    melee:[
+      {name:"Scavenged Shivs", tag:"", range:"Melee", a:"1", bs:"5+", s:"2", ap:"0", d:"1"}
+    ],
+    abilities:[
+      {label:"Grot Infestation (once per battle, per unit):", text:"When this unit is destroyed, you can use this ability. If you do: place the unit in Strategic Reserves with all of its destroyed models returned to it — it is no longer destroyed, and this unit has Deep Strike."}
+    ],
+    keywords:"ARDMOB, GROTS, INFANTRY"
+  },
+  {
+    name:"Wartrakk", count:"1 model", kw:"Mounted · Speed Freeks",
+    variants:[
+      {label:"Wartrakk", m:"12\"",t:"6",sv:"4+",w:"7",ld:"7+",oc:"3"}
+    ],
+    invuln:"6+ invulnerable save",
+    equip:"This model is equipped with: kustom shoota; rokkit launcha; choppas.",
+    ranged:[
+      {name:"Kustom Shoota", tag:"Rapid Fire 2", range:"18\"", a:"4", bs:"5+", s:"4", ap:"0", d:"1"},
+      {name:"Rokkit Launcha", tag:"", range:"24\"", a:"D3+3", bs:"5+", s:"10", ap:"-2", d:"3"}
+    ],
+    melee:[
+      {name:"Choppas", tag:"", range:"Melee", a:"6", bs:"3+", s:"4", ap:"-1", d:"1"}
+    ],
+    abilities:[
+      {label:"Indiscriminate Detonations:", text:"In your Shooting phase, when this unit has shot, select one enemy unit hit by those attacks. That unit is suppressed until the start of your next turn — while suppressed, its attacks have -1 to hit rolls."}
+    ],
+    keywords:"ARDMOB, MOUNTED, SPEED FREEKS"
+  }
+];
+
+const STRATAGEMS = [
+  {name:"Krump 'Em", cost:"1 CP",
+    when:"Fight phase, when a friendly 'ARDMOB unit is selected to fight.",
+    effect:"Your unit's melee attacks have +1 to Strength."},
+  {name:"Medi-Squigs", cost:"1 CP",
+    when:"Your opponent's Shooting phase, when an enemy unit targets a friendly 'ARDMOB unit.",
+    effect:"Your unit has a 5+ invulnerable save."},
+  {name:"Get Stuck In", cost:"1 CP",
+    when:"Your opponent's Shooting phase, when an enemy unit that targeted a friendly unengaged 'ARDMOB unit has shot.",
+    effect:"Your unit can make a surge move of D6+1\"."}
+];
+
+const CORE_STRATS = [
+  {name:"Command Re-roll", cost:"1 CP",
+    when:"After a Hit roll, Wound roll, Damage roll, saving throw, Advance roll, Charge roll, Desperate Escape test, Hazardous test, or a roll to determine the number of attacks made by a weapon or unit.",
+    effect:"Re-roll that roll or test."},
+  {name:"Rapid Ingress", cost:"1 CP",
+    when:"End of your opponent's Movement phase.",
+    effect:"One unit from your army in Reserves arrives on the battlefield as if it were your Reinforcements step, using any deployment method it has access to (e.g. Deep Strike). Can't be used if the unit couldn't deploy this battle round for another reason."},
+  {name:"Counter-offensive", cost:"2 CP",
+    when:"After an enemy unit has fought.",
+    effect:"Select one of your units that's eligible to fight and hasn't done so already — it fights next."},
+  {name:"Crushing Impact", cost:"1 CP",
+    when:"After one of your MONSTER or VEHICLE units completes a Charge move.",
+    effect:"Select an enemy unit you are engaged with. Roll a number of D6 equal to your unit's Toughness: for each 5+ the enemy suffers 1 mortal wound (max 6); for each 1 rolled, your unit suffers 1 mortal wound."},
+  {name:"Epic Challenge", cost:"1 CP",
+    when:"Fight phase, when a CHARACTER unit from your army is selected to fight.",
+    effect:"That unit's melee attacks gain the [PRECISION] ability for the phase, letting it target enemy Characters attached to a bodyguard unit."},
+  {name:"Insane Bravery", cost:"1 CP",
+    when:"After a unit in your army fails a Battle-shock test in the Command phase.",
+    effect:"Treat that test as passed."},
+  {name:"Grenade", cost:"1 CP",
+    when:"Your Shooting phase.",
+    effect:"Pick an enemy unit within 8\" of and visible to one of your GRENADES units that is unengaged and hasn't shot yet. Roll six D6: for each 6, the enemy unit suffers 1 mortal wound."},
+  {name:"Fire Overwatch", cost:"1 CP",
+    when:"End of your opponent's Movement phase.",
+    effect:"Pick one enemy unit and one of your units within 24\" that's eligible to shoot it. Your unit shoots at it using the Snap Shooting rules (hits only on unmodified 6s, can't be re-rolled)."},
+  {name:"Go to Ground", cost:"1 CP",
+    when:"Your opponent's Shooting phase, when an INFANTRY unit from your army is targeted.",
+    effect:"Your unit gains the Benefit of Cover and a 6+ invulnerable save for the phase."},
+  {name:"Smokescreen", cost:"1 CP",
+    when:"Your opponent's Shooting phase, when a unit with the SMOKE keyword from your army is targeted.",
+    effect:"Your unit gains the Benefit of Cover and the Stealth ability for the phase."},
+  {name:"Heroic Intervention", cost:"1 CP (+1 CP for Into the Fray)",
+    when:"End of your opponent's Charge phase.",
+    effect:"Pick one friendly unengaged unit within 12\" of an enemy unit (a Vehicle can only be picked if it's a Character or Walker) — it can charge. Choose one: Leap to Defend (base cost) — can only target an enemy unit that itself charged this turn; or Into the Fray (+1 CP) — can target any enemy unit within 6\", with the charge roll capped at 6."}
+];
+
+const ENHANCEMENTS = [
+  {name:"Rallying War Cry", badge:"Warboss only",
+    effect:"(Once per battle, per unit) In your Command phase, you can use this ability. If you do, return up to D3+2 destroyed bodyguard models to this unit."},
+  {name:"Extra Platin'", badge:"Wartrakk only",
+    effect:"This unit has a 3+ armour save and a 4+ invulnerable save."}
+];
+
+const DETACHMENT_RULE = {
+  name:"Ard As Nails", cost:"1 DP",
+  effect:"Attacks that target a friendly 'ARDMOB unit with the Waaagh! active with a Strength greater than that friendly unit's Toughness have -1 to Wound rolls."
+};
+
+const FORCE_DISPOSITION = { name:"Purge the Foe" };
+
+const WAAAGH = {
+  title:"Waaagh!",
+  when:"Once per battle.",
+  effects:[
+    "Units can charge after Advancing.",
+    "+1 Strength and +1 Attacks in melee.",
+    "5+ invulnerable save."
+  ]
+};
+
+const GLOSSARY = [
+  {term:"Lethal Hits", def:"Each unmodified Critical Hit scored by this weapon automatically scores a Wound on the target, without needing to make a Wound roll."},
+  {term:"Sustained Hits X", def:"Each Critical Hit scores X additional hits on the target."},
+  {term:"Cleave X", def:"Each time an attack is made with this weapon, worsen the target's armour save by X when resolving that attack."},
+  {term:"Close-Quarters", def:"This weapon's Strength is increased by 2 when targeting a unit within Engagement Range."},
+  {term:"Blast X", def:"Add X to this weapon's Attacks characteristic for every 5 models in the target unit (rounding down). Cannot target units within Engagement Range of your own models."},
+  {term:"Precision", def:"Allows the attack to be allocated to a visible CHARACTER model in the target unit instead of following the normal allocation sequence."},
+  {term:"Psychic", def:"This attack or ability can only be used by/against PSYKER units and may be affected by anti-psychic rules."},
+  {term:"Devastating Wounds", def:"If this weapon scores a Critical Wound, no saving throw of any kind can be made — it inflicts mortal wounds equal to the weapon's Damage instead."},
+  {term:"Hazardous", def:"After the unit shoots or fights, roll one D6 per Hazardous weapon used: on a 1, the bearer suffers a mortal-wound consequence per the current core rules."},
+  {term:"Rapid Fire X", def:"Add X to the Attacks characteristic when the target is within half range."},
+  {term:"Deep Strike", def:"This unit can be set up anywhere on the battlefield that is more than 9\" horizontally from all enemy models, instead of setting up normally."},
+  {term:"Suppressed", def:"A unit affected by this status has -1 to hit rolls until the effect ends, per the ability that inflicted it."},
+  {term:"Objective Control (OC)", def:"A model's contribution to controlling an objective marker. Highest total OC in range controls it; ties are contested."},
+  {term:"Invulnerable Save (InSv)", def:"A saving throw that applies regardless of a weapon's AP characteristic. Use whichever save (armour or invulnerable) is better for the attack being resolved."}
+];
+
+/* ============ RENDER ============ */
+function svgIcon(path){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="${path}"/></svg>`; }
+
+function renderTabs(){
+  const top = document.getElementById('tabsTop');
+  const bottom = document.getElementById('tabsBottom');
+  top.innerHTML = TABS.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${t.label}</button>`).join('');
+  bottom.innerHTML = TABS.map(t=>`<button data-tab="${t.id}" class="${t.id==='units'?'active':''}">${svgIcon(t.icon)}<span>${t.label}</span></button>`).join('');
+  [...top.children, ...bottom.children].forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  });
+}
+
+function switchTab(id){
+  document.querySelectorAll('#tabsTop button, #tabsBottom button').forEach(b=> b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('section.panel').forEach(p=> p.classList.toggle('active', p.id==='panel-'+id));
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function weaponRows(list){
+  if(!list || !list.length) return '';
+  return list.map(w=>`<tr><td>${w.name}${w.tag?`<span class="tags">${w.tag}</span>`:''}</td><td>${w.range}</td><td>${w.a}</td><td>${w.bs}</td><td>${w.s}</td><td>${w.ap}</td><td>${w.d}</td></tr>`).join('');
+}
+
+function renderUnits(){
+  const el = document.getElementById('panel-units');
+  el.innerHTML = `<div class="section-head"><h2>Datasheets</h2><div class="rule"></div></div>` +
+  UNITS.map((u,i)=>`
+    <div class="unit-card" data-idx="${i}">
+      <div class="unit-head">
+        <div class="unit-title">
+          <span class="name">${u.name}</span>
+          <span class="kw">${u.count} · ${u.kw}</span>
+        </div>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="unit-body">
+        <div class="statline">
+          ${u.variants.length===1 ? statBlock(u.variants[0]) : ''}
+        </div>
+        ${u.variants.length>1 ? u.variants.map(v=>`<div class="model-variant"><b>${v.label}</b></div><div class="statline">${statBlock(v)}</div>`).join('') : ''}
+        ${u.invuln?`<div class="invuln-pill">◆ ${u.invuln}</div><br>`:''}
+        <div class="model-variant">${u.equip}</div>
+        ${u.note?`<div class="model-variant">${u.note}</div>`:''}
+        ${u.ranged?.length?`<table class="weapons"><caption>Ranged Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>BS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows(u.ranged)}</tbody></table>`:''}
+        ${u.melee?.length?`<table class="weapons"><caption>Melee Weapons</caption><thead><tr><th>Weapon</th><th>Rng</th><th>A</th><th>WS</th><th>S</th><th>AP</th><th>D</th></tr></thead><tbody>${weaponRows(u.melee)}</tbody></table>`:''}
+        ${u.abilities.map(a=>`<div class="ability">${a.core?`<span class="core">CORE:</span> ${a.text}`:`<span class="label">${a.label}</span> ${a.text}`}</div>`).join('')}
+        <div class="keywords"><b>Keywords:</b> ${u.keywords}${u.ledBy?`<br><b>Led by:</b> ${u.ledBy}`:''}</div>
+      </div>
+    </div>
+  `).join('');
+
+  el.querySelectorAll('.unit-head').forEach(h=>{
+    h.addEventListener('click', ()=> h.closest('.unit-card').classList.toggle('open'));
+  });
+}
+
+function statBlock(v){
+  return ['m','t','sv','w','ld','oc'].map(k=>`<div class="stat"><div class="k">${k.toUpperCase()}</div><div class="v">${v[k]}</div></div>`).join('');
+}
+
+function stratCard(s){
+  return `<div class="info-card">
+    <div class="row1"><h3>${s.name}</h3><span class="cost">${s.cost}</span></div>
+    <div class="rule-line"><b>When:</b> ${s.when}</div>
+    <div class="rule-line"><b>Effect:</b> ${s.effect}</div>
+  </div>`;
+}
+
+function renderStrats(){
+  const el = document.getElementById('panel-strats');
+  el.innerHTML = `
+    <div class="info-card" style="border-color:var(--yellow);">
+      <div class="rule-line"><b>Reminder:</b> a unit can only be affected by one Stratagem per phase.</div>
+    </div>
+    <div class="section-head"><h2>'Ardmob Stratagems</h2><div class="rule"></div></div>
+    ${STRATAGEMS.map(stratCard).join('')}
+    <div class="section-head"><h2>Core Stratagems</h2><div class="rule"></div></div>
+    ${CORE_STRATS.map(stratCard).join('')}
+  `;
+}
+
+function renderFaction(){
+  const el = document.getElementById('panel-faction');
+  el.innerHTML = `
+    <div class="faction-rule-card">
+      <h2>${WAAAGH.title}</h2>
+      <div class="rule-line">${WAAAGH.when}</div>
+      <ul>${WAAAGH.effects.map(e=>`<li>${e}</li>`).join('')}</ul>
+    </div>
+
+    <div class="section-head"><h2>Detachment Rule</h2><div class="rule"></div></div>
+    <div class="info-card">
+      <div class="row1"><h3>${DETACHMENT_RULE.name}</h3><span class="cost">${DETACHMENT_RULE.cost}</span></div>
+      <div class="rule-line">${DETACHMENT_RULE.effect}</div>
+    </div>
+
+    <div class="section-head"><h2>Force Disposition</h2><div class="rule"></div></div>
+    <div class="info-card">
+      <div class="rule-line"><b>${FORCE_DISPOSITION.name}</b></div>
+    </div>
+
+    <div class="section-head"><h2>Enhancements</h2><div class="rule"></div></div>
+    <div class="rule-line" style="color:var(--muted); font-size:12px; margin:-2px 0 10px;">Tap the one you're taking — only one can be selected.</div>
+    ${ENHANCEMENTS.map((e,i)=>`
+      <div class="info-card selectable" data-enh="${i}">
+        <div class="row1"><h3>${e.name}</h3><span class="default-badge">${e.badge}</span></div>
+        <div class="rule-line">${e.effect}</div>
+        <div class="select-indicator">
+          <span class="select-check">✓ Selected</span>
+          <span class="select-prompt">Tap to select</span>
+        </div>
+      </div>`).join('')}
+
+    <div class="section-head"><h2>Roster</h2><div class="rule"></div></div>
+    <div class="info-card">
+      <div class="rule-line">1x Warboss (Warlord) · 1x Wierdboy · 2x Boyz · 10x Gretchin · 1x Wartrakk.</div>
+    </div>
+  `;
+
+  el.querySelectorAll('.info-card.selectable').forEach(card=>{
+    if(Number(card.dataset.enh) === selectedEnhancement) card.classList.add('selected');
+    card.addEventListener('click', ()=>{
+      const idx = Number(card.dataset.enh);
+      selectedEnhancement = (selectedEnhancement === idx) ? null : idx;
+      el.querySelectorAll('.info-card.selectable').forEach(c=>{
+        c.classList.toggle('selected', Number(c.dataset.enh) === selectedEnhancement);
+      });
+    });
+  });
+}
+
+function renderGlossary(){
+  const el = document.getElementById('panel-glossary');
+  el.innerHTML = `<div class="section-head"><h2>Rules Glossary</h2><div class="rule"></div></div>` +
+    GLOSSARY.map(g=>`<div class="info-card"><div class="glossary-term">${g.term}</div><div class="rule-line" style="margin-top:5px;">${g.def}</div></div>`).join('');
+}
+
+/* ============ SEARCH ============ */
+function applySearch(q){
+  q = q.trim().toLowerCase();
+  document.querySelectorAll('#panel-units .unit-card').forEach(card=>{
+    const match = !q || card.textContent.toLowerCase().includes(q);
+    card.style.display = match ? '' : 'none';
+    if(q && match) card.classList.add('open');
+  });
+  document.querySelectorAll('#panel-strats .info-card, #panel-glossary .info-card, #panel-faction .info-card').forEach(card=>{
+    const match = !q || card.textContent.toLowerCase().includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+}
+
+/* ============ INIT ============ */
+renderTabs();
+renderUnits();
+renderStrats();
+renderFaction();
+renderGlossary();
+document.getElementById('search').addEventListener('input', e=> applySearch(e.target.value));
+</script>
+</body>
+</html>
