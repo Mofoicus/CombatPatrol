@@ -224,17 +224,12 @@
     nav.tabs{ display:none; }
   }
 
-  /* Wide viewports (landscape phones, tablets): use the horizontal room for a card grid */
+  /* Wide viewports (landscape phones, tablets): stay single-column but stretch it out */
   @media (min-width:760px){
-    .app{ max-width:1180px; }
-    section.panel.active{
-      display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
-      gap:12px; align-items:start;
-    }
-    section.panel.active > .section-head,
-    section.panel.active > .faction-rule-card,
-    section.panel.active > .force-empty-note{ grid-column:1 / -1; }
-    .unit-card, .info-card{ margin-bottom:0; }
+    .app{ max-width:900px; }
+  }
+  @media (min-width:1000px){
+    .app{ max-width:1040px; }
   }
 
   /* Short viewports (phone landscape): claw back vertical space from the header/tabs */
