@@ -9,7 +9,8 @@
 <title>Combat Patrol Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <style>
   :root{
     --bg:#14170f;
@@ -2232,6 +2233,12 @@ document.getElementById('forceModal').addEventListener('click', e=>{
 });
 loadForceExtras(currentForceId);
 loadForceOwnedState();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(err=> console.error('Service worker registration failed', err));
+  });
+}
 </script>
 </body>
 </html>
