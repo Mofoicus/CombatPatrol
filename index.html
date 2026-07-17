@@ -1864,11 +1864,16 @@ async function toggleForceOwned(forceId, btnEl){
   try{
     const {data: existing} = await sb.from('owned_items').select('id').eq('force_id',forceId).is('unit_name', null).maybeSingle();
     if(existing){
-      await sb.from('owned_items').update({owned:newVal, updated_at:new Date().toISOString()}).eq('id', existing.id);
+      const {error} = await sb.from('owned_items').update({owned:newVal, updated_at:new Date().toISOString()}).eq('id', existing.id);
+      if(error) throw error;
     } else {
-      await sb.from('owned_items').insert({force_id:forceId, unit_name:null, owned:newVal});
+      const {error} = await sb.from('owned_items').insert({force_id:forceId, unit_name:null, owned:newVal});
+      if(error) throw error;
     }
-  }catch(e){ console.error('Supabase force-owned save failed', e); }
+  }catch(e){
+    console.error('Supabase force-owned save failed', e);
+    alert('Could not save this — it will reset on refresh. Error: ' + (e.message || e));
+  }
 }
 
 async function uploadPhoto(forceId, unitName, file){
@@ -1881,7 +1886,7 @@ async function uploadPhoto(forceId, unitName, file){
     const {data: inserted, error: insErr} = await sb.from('model_photos')
       .insert({force_id:forceId, unit_name:unitName, photo_url:urlData.publicUrl})
       .select().single();
-    if(insErr){ console.error(insErr); return; }
+    if(insErr){ console.error(insErr); alert('Photo uploaded but could not be saved to the database: ' + insErr.message); return; }
     if(!photosState[unitName]) photosState[unitName] = [];
     photosState[unitName].push(inserted);
     renderUnits();
@@ -1929,9 +1934,13 @@ function renderUnits(){
   const el = document.getElementById('panel-units');
   const force = FORCES[currentForceId];
   const isAos = force.system === 'aos';
+  const openIdxs = new Set([...el.querySelectorAll('.unit-card.open')].map(c=>c.dataset.idx));
   el.innerHTML = `<div class="section-head"><h2>${isAos ? 'Warscrolls' : 'Datasheets'}</h2><div class="rule"></div></div>` +
   force.units.map((u,i)=> isAos ? unitCardAos(u,i) : unitCard40k(u,i)).join('');
 
+  el.querySelectorAll('.unit-card').forEach(card=>{
+    if(openIdxs.has(card.dataset.idx)) card.classList.add('open');
+  });
   el.querySelectorAll('.unit-head').forEach(h=>{
     h.addEventListener('click', ()=> h.closest('.unit-card').classList.toggle('open'));
   });
