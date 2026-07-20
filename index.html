@@ -2316,7 +2316,13 @@ function renderHeader(){
 
 function renderForceList(){
   const el = document.getElementById('forceList');
-  el.innerHTML = Object.values(FORCES).map(f=>{
+  const typeOrder = { 'Combat Patrol': 0, 'Spearhead': 1 };
+  const sorted = Object.values(FORCES).sort((a,b)=>{
+    const ta = typeOrder[a.type] ?? 99, tb = typeOrder[b.type] ?? 99;
+    if(ta !== tb) return ta - tb;
+    return a.name.localeCompare(b.name);
+  });
+  el.innerHTML = sorted.map(f=>{
     const isOwned = !!forceOwnedState[f.id];
     return `
     <div class="force-card ${f.id===currentForceId?'active':''}" data-force="${f.id}">
