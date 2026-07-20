@@ -2,7 +2,7 @@
 // Bump this version string whenever you want to force clients to drop
 // old cached static assets (fonts/icons/manifest). The app HTML itself
 // always prefers the network now, so it updates without needing that.
-const CACHE_NAME = 'cp-companion-v2';
+const CACHE_NAME = 'cp-companion-v3';
 
 const PRECACHE_URLS = [
   './',
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
 
   if (isAppShell) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           if (res && res.status === 200) {
             const copy = res.clone();
