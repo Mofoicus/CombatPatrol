@@ -1863,6 +1863,147 @@ const FORCES = {
         "Your army cannot include ADEPTUS ASTARTES PSYKER models, or the 1st Company Task Force Detachment."
       ]
     }
+  },
+  assaultforce: {
+    id:'assaultforce', name:"Assault Force", faction:"Space Marines", type:"Combat Patrol", system:"40k",
+    subtitle:"Combat Patrol · Space Marines · 11th Edition",
+    roster:"1x Captain · 1x Librarian · 1x Vanguard Veteran Squad (5 models) · 1x Intercessor Squad (5 models) · 1x Land Speeder.",
+    units:[
+      {
+        name:"Captain", count:"1 model", kw:"Character",
+        variants:[
+          {label:"Captain", m:"6\"",t:"4",sv:"3+",w:"6",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"This model is equipped with: Heavy Bolt Pistol; Master-crafted Power Weapon; Relic Shield.",
+        ranged:[
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"2+", s:"4", ap:"-1", d:"1"}
+        ],
+        melee:[
+          {name:"Master-crafted Power Weapon", tag:"", range:"Melee", a:"6", bs:"2+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; Space Marine Chapters"},
+          {label:"Relic Shield:", text:"This model has +1 to its Wounds characteristic (already included in the profile above)."},
+          {label:"Master of War:", text:"At the end of your opponent's Charge phase, if this unit is unengaged and within 6\" of one or more enemy units, you can use this ability. If you do, resolve a charge with it. When making the charge roll, if the result is greater than 6 (after modifiers), change it to 6."}
+        ],
+        keywords:"ASSAULT FORCE, CHARACTER, EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS"
+      },
+      {
+        name:"Librarian", count:"1 model", kw:"Character · Psyker · Leader",
+        variants:[
+          {label:"Librarian", m:"6\"",t:"4",sv:"3+",w:"4",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"This model is equipped with: Bolt Pistol; Force Weapon; Fulmination.",
+        ranged:[
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Fulmination — Electropulse", tag:"Psychic", range:"24\"", a:"2", bs:"3+", s:"8", ap:"-2", d:"3"},
+          {name:"Fulmination — Electrosurge", tag:"Blast 2 · Psychic", range:"24\"", a:"3", bs:"3+", s:"4", ap:"-1", d:"1"}
+        ],
+        melee:[
+          {name:"Force Weapon", tag:"Psychic", range:"Melee", a:"4", bs:"3+", s:"6", ap:"-1", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; Space Marine Chapters; Leader — can attach to Assault Force Intercessor Squad"},
+          {label:"Empyric Insight:", text:"This unit's ranged attacks can ignore modifiers to BS, Hit rolls, and wound rolls."}
+        ],
+        keywords:"ASSAULT FORCE, CHARACTER, EXPLOSIVES, IMPERIUM, INFANTRY, PSYKER, TACTICUS"
+      },
+      {
+        name:"Vanguard Veteran Squad", count:"5 models", kw:"Infantry · Fly · Jump Pack",
+        variants:[
+          {label:"Vanguard Veteran Sergeant", m:"12\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"1"},
+          {label:"Vanguard Veteran", m:"12\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"1"}
+        ],
+        equip:"The Sergeant is equipped with: Heavy Bolt Pistol; Master-crafted Power Weapon. 1 Vanguard Veteran is equipped with: Master-crafted Power Weapon; Plasma Pistol. Every other Vanguard Veteran is equipped with: Heavy Bolt Pistol; Master-crafted Power Weapon.",
+        ranged:[
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Plasma Pistol — Standard", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"7", ap:"-2", d:"1"},
+          {name:"Plasma Pistol — Supercharge", tag:"Close-Quarters · Hazardous", range:"12\"", a:"1", bs:"3+", s:"8", ap:"-3", d:"2"}
+        ],
+        melee:[
+          {name:"Master-crafted Power Weapon", tag:"", range:"Melee", a:"3", bs:"3+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; Space Marine Chapters"},
+          {label:"Rapid Reactions (Once per turn, per unit):", text:"In your opponent's Shooting phase, when an enemy unit has shot, if that unit targeted this unit, this unit can make a normal move of up to D6+1\"."}
+        ],
+        keywords:"ASSAULT FORCE, EXPLOSIVES, FLY, IMPERIUM, INFANTRY, JUMP PACK, VANGUARD VETERAN SQUAD"
+      },
+      {
+        name:"Intercessor Squad", count:"5 models", kw:"Battleline",
+        variants:[
+          {label:"Intercessor Sergeant", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"3"},
+          {label:"Intercessor", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"3"}
+        ],
+        equip:"The Sergeant is equipped with: Bolt Pistol; Bolt Rifle; Chainsword; Knives and Fists. 1 Intercessor is equipped with: Bolt Pistol; Bolt Rifle; Grenade Launcher; Knives and Fists. Every other Intercessor is equipped with: Bolt Pistol; Bolt Rifle; Knives and Fists.",
+        ranged:[
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"2", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Bolt Rifle", tag:"Assault · Heavy", range:"24\"", a:"2", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Grenade Launcher — Frag", tag:"Blast 1", range:"24\"", a:"2", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Grenade Launcher — Krak", tag:"Anti-Monster/Vehicle 4+", range:"24\"", a:"2", bs:"3+", s:"5", ap:"-2", d:"3"}
+        ],
+        melee:[
+          {name:"Chainsword", tag:"", range:"Melee", a:"5", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Knives and Fists", tag:"", range:"Melee", a:"3", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; Space Marine Chapters"},
+          {label:"Stalwart Defenders:", text:"When an enemy unit targets this unit, if every model in this unit is within range of an objective marker, attacks that target this unit have -1 to their Armour Penetration characteristic."}
+        ],
+        keywords:"ASSAULT FORCE, BATTLELINE, EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS"
+      },
+      {
+        name:"Land Speeder", count:"1 model", kw:"Vehicle · Fly",
+        variants:[
+          {label:"Land Speeder", m:"14\"",t:"8",sv:"3+",w:"9",ld:"6+",oc:"2"}
+        ],
+        equip:"This model is equipped with: Armoured Impact; Multi-melta; Onslaught Gatling Cannon; Stormfury Missile Launcher.",
+        ranged:[
+          {name:"Multi-melta", tag:"Melta 2", range:"18\"", a:"2", bs:"3+", s:"10", ap:"-4", d:"D6"},
+          {name:"Onslaught Gatling Cannon", tag:"Sustained Hits 1", range:"24\"", a:"8", bs:"3+", s:"5", ap:"0", d:"1"},
+          {name:"Stormfury Missile Launcher", tag:"", range:"48\"", a:"1", bs:"3+", s:"10", ap:"-3", d:"4"}
+        ],
+        melee:[
+          {name:"Armoured Impact", tag:"", range:"Melee", a:"4", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; Space Marine Chapters"}
+        ],
+        keywords:"ASSAULT FORCE, FLY, IMPERIUM, VEHICLE"
+      }
+    ],
+    stratagems:[
+      {name:"Relentless Aggression", cost:"1 CP",
+        when:"Fight phase, when a friendly Assault Force unit is selected to make a consolidation move.",
+        effect:"When making that consolidation move, your unit can move up to 6\"."},
+      {name:"Terrifying Charge", cost:"1 CP",
+        when:"Your Charge phase, when a friendly Assault Force unit ends a charge move.",
+        effect:"Select one enemy unit engaged with your unit. That enemy unit makes a battle-shock roll, with -1 to that battle-shock roll."},
+      {name:"Decapitating Strike", cost:"1 CP",
+        when:"Fight phase, when a friendly Assault Force unit is selected to fight.",
+        effect:"Your unit's melee attacks have the [PRECISION] ability."}
+    ],
+    enhancements:[
+      {name:"Battle-line Veterans", badge:"Intercessor Squad only",
+        effect:"This unit's bolt rifle weapons have the [RAPID FIRE 1] ability."},
+      {name:"Blade Masters", badge:"Vanguard Veteran Squad only",
+        effect:"When an enemy unit ends a charge move, if that enemy unit is engaged with this unit, that enemy unit's melee attacks have -1 to wound rolls until the end of the turn."}
+    ],
+    detachmentRule:{
+      name:"Indomitable Resolve", cost:"1 DP",
+      effect:"Friendly Assault Force units have +1 to their Objective Control characteristic."
+    },
+    disposition:{ name:"Take and Hold" },
+    factionRule: {
+      title:"Oath of Moment",
+      when:"If your Army Faction is Adeptus Astartes, at the start of your Command phase, select one unit from your opponent's army. Until the start of your next Command phase, that enemy unit is your Oath of Moment target.",
+      effects:[
+        "Each time a model with this ability makes an attack that targets your Oath of Moment target, you can re-roll the Hit roll.",
+        "If you are using a Codex: Space Marines Detachment and your army does not include one or more units with the Black Templars, Blood Angels, Dark Angels, Deathwatch, or Space Wolves keywords, add 1 to the Wound roll as well."
+      ]
+    }
   }
 };
 
