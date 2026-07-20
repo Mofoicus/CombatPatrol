@@ -177,6 +177,21 @@
   .cost{ font-family:'JetBrains Mono'; font-weight:700; font-size:12px; color:#0e1109; background:var(--yellow); padding:2px 8px; border-radius:20px; white-space:nowrap; }
   .kind{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
   .flufftext{ font-size:12px; color:var(--muted); font-style:italic; margin-bottom:8px; line-height:1.5; }
+
+  /* Stratagem cards: colored by phase, matching GW's own convention —
+     red = opponent's turn, blue = your turn, green = Command phase */
+  .strat-card{ padding:0; overflow:hidden; }
+  .strat-header{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:10px 14px; margin:0;
+  }
+  .strat-header h3{ font-family:'Bebas Neue'; font-size:17px; letter-spacing:.4px; color:#fff; margin:0; }
+  .strat-card .rule-line{ padding:0 14px; margin:0 0 4px; }
+  .strat-card .rule-line:first-of-type{ margin-top:10px; }
+  .strat-card .rule-line:last-child{ margin-bottom:12px; }
+  .strat-red .strat-header{ background:linear-gradient(135deg, #8a2a1f, #6e2018); }
+  .strat-blue .strat-header{ background:linear-gradient(135deg, #2a5a7a, #1f4560); }
+  .strat-green .strat-header{ background:linear-gradient(135deg, #2f6b4f, #235339); }
   .rule-line{ font-size:13.5px; line-height:1.55; margin-bottom:4px; }
   .rule-line b{ color:var(--green-bright); }
 
@@ -261,14 +276,19 @@
   .modal-close{ background:var(--surface3); border:1px solid var(--line); color:var(--bone); width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px; line-height:1; }
   .force-card{
     display:flex; justify-content:space-between; align-items:center; gap:10px;
-    background:var(--surface2); border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:8px; cursor:pointer;
+    background:var(--surface2); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:8px; cursor:pointer;
   }
   .force-card:active{ background:var(--surface3); }
-  .force-card.active{ border-color:var(--green); }
+  .force-card.active{ border-color:var(--green); border-left-color:var(--green); }
+  .force-card.type-cp{ border-left-color:#c9822f; }
+  .force-card.type-sh{ border-left-color:#3d8fa8; }
+  .force-card.active.type-cp{ border-left-color:#c9822f; }
+  .force-card.active.type-sh{ border-left-color:#3d8fa8; }
   .force-card .fc-name{ font-family:'Bebas Neue'; font-size:18px; color:var(--bone); letter-spacing:.4px; }
   .force-card .fc-sub{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
   .force-card .fc-badge{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:var(--surface3); color:var(--muted); white-space:nowrap; }
-  .force-card.active .fc-badge{ background:var(--green); color:#0e1109; }
+  .fc-badge.badge-cp{ background:#c9822f; color:#1a1206; }
+  .fc-badge.badge-sh{ background:#3d8fa8; color:#071417; }
   .fc-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
   .force-empty-note{ font-size:12.5px; color:var(--muted-dim); line-height:1.6; padding:10px 4px 2px; }
 </style>
@@ -2300,6 +2320,36 @@ async function toggleForceOwned(forceId, btnEl){
   }
 }
 
+// Persistent picks: which Enhancement / Templar Vow / Regiment Ability is selected, per force
+async function loadSelections(forceId){
+  selectedEnhancement = null;
+  selectedVow = null;
+  selectedRegimentAbility = null;
+  if(!sb) return;
+  try{
+    const {data} = await sb.from('selections').select('*').eq('force_id', forceId);
+    (data||[]).forEach(row=>{
+      if(row.kind === 'enhancement') selectedEnhancement = row.selected_index;
+      if(row.kind === 'vow') selectedVow = row.selected_index;
+      if(row.kind === 'regiment') selectedRegimentAbility = row.selected_index;
+    });
+  }catch(e){ console.error('Supabase selections load failed', e); }
+}
+
+async function saveSelection(forceId, kind, idx){
+  if(!sb) return;
+  try{
+    const {error} = await sb.from('selections').upsert(
+      {force_id: forceId, kind, selected_index: idx, updated_at: new Date().toISOString()},
+      {onConflict: 'force_id,kind'}
+    );
+    if(error) throw error;
+  }catch(e){
+    console.error('Supabase selection save failed', e);
+    alert('Could not save this pick — it may reset on refresh. Error: ' + (e.message || e));
+  }
+}
+
 async function uploadPhoto(forceId, unitName, file){
   if(!sb){ alert('Photo sync is not connected.'); return; }
   const path = `${forceId}/${unitName.replace(/[^a-zA-Z0-9]/g,'_')}/${Date.now()}_${file.name}`;
@@ -2432,9 +2482,17 @@ function statBlock(v){
   return ['m','t','sv','w','ld','oc'].map(k=>`<div class="stat"><div class="k">${k.toUpperCase()}</div><div class="v">${v[k]}</div></div>`).join('');
 }
 
+function stratPhaseClass(when){
+  const w = (when || '').toLowerCase();
+  if(w.includes('opponent')) return 'strat-red';
+  if(w.includes('command phase')) return 'strat-green';
+  return 'strat-blue';
+}
+
 function stratCard(s){
-  return `<div class="info-card">
-    <div class="row1"><h3>${s.name}</h3><span class="cost">${s.cost}</span></div>
+  const cls = stratPhaseClass(s.when);
+  return `<div class="info-card strat-card ${cls}">
+    <div class="strat-header"><h3>${s.name}</h3><span class="cost">${s.cost}</span></div>
     <div class="rule-line"><b>When:</b> ${s.when}</div>
     <div class="rule-line"><b>Effect:</b> ${s.effect}</div>
   </div>`;
@@ -2467,6 +2525,7 @@ function renderStrats(){
         el.querySelectorAll('.info-card.selectable').forEach(c=>{
           c.classList.toggle('selected', Number(c.dataset.reg) === selectedRegimentAbility);
         });
+        saveSelection(force.id, 'regiment', selectedRegimentAbility);
       });
     });
     return;
@@ -2547,6 +2606,7 @@ function renderFaction(){
       el.querySelectorAll('[data-enh]').forEach(c=>{
         c.classList.toggle('selected', Number(c.dataset.enh) === selectedEnhancement);
       });
+      saveSelection(force.id, 'enhancement', selectedEnhancement);
     });
   });
 
@@ -2558,6 +2618,7 @@ function renderFaction(){
       el.querySelectorAll('[data-vow]').forEach(c=>{
         c.classList.toggle('selected', Number(c.dataset.vow) === selectedVow);
       });
+      saveSelection(force.id, 'vow', selectedVow);
     });
   });
 }
@@ -2586,8 +2647,10 @@ function renderForceList(){
   });
   el.innerHTML = sorted.map(f=>{
     const isOwned = !!forceOwnedState[f.id];
+    const typeCls = f.type === 'Combat Patrol' ? 'type-cp' : (f.type === 'Spearhead' ? 'type-sh' : '');
+    const badgeCls = f.type === 'Combat Patrol' ? 'badge-cp' : (f.type === 'Spearhead' ? 'badge-sh' : '');
     return `
-    <div class="force-card ${f.id===currentForceId?'active':''}" data-force="${f.id}">
+    <div class="force-card ${typeCls} ${f.id===currentForceId?'active':''}" data-force="${f.id}">
       <span>
         <div class="fc-name">${f.name}</div>
         <div class="fc-sub">${f.faction}</div>
@@ -2596,7 +2659,7 @@ function renderForceList(){
         <button class="owned-toggle ${isOwned?'owned':''}" data-owned-force="${f.id}">
           <span class="dot"></span>${isOwned ? 'Owned' : 'Not Owned'}
         </button>
-        <span class="fc-badge">${f.type}</span>
+        <span class="fc-badge ${badgeCls}">${f.type}</span>
       </span>
     </div>
   `;}).join('');
@@ -2628,6 +2691,7 @@ function selectForce(id){
   closeForceModal();
   switchTab('units');
   loadForceExtras(id);
+  loadSelections(id).then(()=>{ renderStrats(); renderFaction(); });
 }
 
 async function openForceModal(){
@@ -2668,6 +2732,7 @@ document.getElementById('forceModal').addEventListener('click', e=>{
 });
 loadForceExtras(currentForceId);
 loadForceOwnedState();
+loadSelections(currentForceId).then(()=>{ renderStrats(); renderFaction(); });
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
