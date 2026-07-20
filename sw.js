@@ -1,7 +1,8 @@
 // Combat Patrol Companion — offline app-shell service worker
-// Bump this version string whenever index.html (or this file) changes,
-// so devices pick up the new version instead of serving a stale cache.
-const CACHE_NAME = 'cp-companion-v1';
+// Bump this version string whenever you want to force clients to drop
+// old cached static assets (fonts/icons/manifest). The app HTML itself
+// always prefers the network now, so it updates without needing that.
+const CACHE_NAME = 'cp-companion-v2';
 
 const PRECACHE_URLS = [
   './',
@@ -28,14 +29,33 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first, network-updates-in-background for everything (including
-// cross-origin CDN requests like fonts and the Supabase library).
-// Data requests to Supabase's own API still hit the network normally —
-// this only touches GET requests for static assets/pages.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
+  // The app page itself: always try the network first so edits you push
+  // show up on next load. Falls back to the cached copy only when offline.
+  const isAppShell = req.mode === 'navigate' ||
+    req.url.endsWith('/index.html') ||
+    req.url.endsWith('/') ;
+
+  if (isAppShell) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Everything else (fonts, the Supabase library, icons): cache-first,
+  // with a background refresh so it still stays reasonably current.
   event.respondWith(
     caches.match(req).then((cached) => {
       const networkFetch = fetch(req)
