@@ -2004,6 +2004,127 @@ const FORCES = {
         "If you are using a Codex: Space Marines Detachment and your army does not include one or more units with the Black Templars, Blood Angels, Dark Angels, Deathwatch, or Space Wolves keywords, add 1 to the Wound roll as well."
       ]
     }
+  },
+  baneslayer: {
+    id:'baneslayer', name:"Bane-Slayer's Bulwark", faction:"Leagues of Votann", type:"Combat Patrol", system:"40k",
+    subtitle:"Combat Patrol · Leagues of Votann · 11th Edition",
+    roster:"1x Vynn Bane-Slayer · 1x Einhyr Hearthguard (5 models: 1 Hesyr + 4 Einhyr Hearthguard) · 1x Brôkhyr Thunderkyn (3 models) · 1x Hearthkyn Warriors (10 models).",
+    units:[
+      {
+        name:"Vynn Bane-Slayer", count:"1 model", kw:"Character · Leader",
+        variants:[
+          {label:"Vynn Bane-Slayer", m:"5\"",t:"5",sv:"2+",w:"5",ld:"7+",oc:"1"}
+        ],
+        equip:"This model is equipped with: Autoch-pattern Combi-bolter; Mass Hammer.",
+        ranged:[
+          {name:"Autoch-pattern Combi-bolter", tag:"", range:"24\"", a:"4", bs:"2+", s:"4", ap:"0", d:"1"}
+        ],
+        melee:[
+          {name:"Mass Hammer", tag:"", range:"Melee", a:"3", bs:"3+", s:"12", ap:"-3", d:"D6+1"}
+        ],
+        abilities:[
+          {core:true, text:"Prioritised Efficiency; Leader — can attach to Bane-Slayer's Bulwark Einhyr Hearthguard"},
+          {label:"Weavefield Crest:", text:"This model has a 4+ invulnerable save."},
+          {label:"Fast-Firing Targeters:", text:"This unit's ranged attacks have the [ASSAULT] ability."}
+        ],
+        keywords:"BANE-SLAYER'S BULWARK, CHARACTER, EINHYR, EINHYR CHAMPION, EXOARMOUR, INFANTRY"
+      },
+      {
+        name:"Einhyr Hearthguard", count:"5 models (1 Hesyr + 4 Einhyr Hearthguard)", kw:"Infantry",
+        variants:[
+          {label:"Hesyr / Einhyr Hearthguard", m:"5\"",t:"5",sv:"2+",w:"2",ld:"7+",oc:"1"}
+        ],
+        equip:"The Hesyr is equipped with: Exoarmour Grenade Launcher; Graviton Hammer; Volkanite Disintegrator. Every Einhyr Hearthguard is equipped with: Exoarmour Grenade Launcher; Plasma Blade Gauntlet; Volkanite Disintegrator.",
+        ranged:[
+          {name:"Exoarmour Grenade Launcher", tag:"Blast 1", range:"24\"", a:"D3", bs:"3+", s:"3", ap:"0", d:"1"},
+          {name:"Volkanite Disintegrator", tag:"Devastating Wounds", range:"24\"", a:"3", bs:"3+", s:"5", ap:"0", d:"1"}
+        ],
+        melee:[
+          {name:"Graviton Hammer", tag:"Anti-Monster/Vehicle 3+", range:"Melee", a:"3", bs:"4+", s:"9", ap:"-1", d:"3"},
+          {name:"Plasma Blade Gauntlet", tag:"", range:"Melee", a:"3", bs:"3+", s:"6", ap:"-2", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Prioritised Efficiency"},
+          {label:"Decisive Destruction:", text:"This unit's ranged attacks that target the closest eligible target can re-roll hit rolls of 1."},
+          {label:"Weavefield Crest:", text:"This unit has a 5+ invulnerable save."}
+        ],
+        keywords:"BANE-SLAYER'S BULWARK, EXPLOSIVES, HEARTHKYN, INFANTRY"
+      },
+      {
+        name:"Brôkhyr Thunderkyn", count:"3 models", kw:"Infantry",
+        variants:[
+          {label:"Brôkhyr Thunderkyn", m:"5\"",t:"6",sv:"3+",w:"2",ld:"7+",oc:"1"}
+        ],
+        equip:"Every model is equipped with: Powered Strikes; SP Conversion Beamer.",
+        ranged:[
+          {name:"SP Conversion Beamer", tag:"Conversion · Lethal Hits", range:"24\"", a:"2", bs:"4+", s:"7", ap:"-2", d:"3"}
+        ],
+        melee:[
+          {name:"Powered Strikes", tag:"", range:"Melee", a:"2", bs:"4+", s:"4", ap:"0", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Prioritised Efficiency"},
+          {label:"Breaching Fire:", text:"In your Shooting phase, when this unit has shot, you can select one enemy unit hit by those attacks. If you do, friendly Leagues of Votann units' ranged attacks that target that enemy unit have [IGNORES COVER]."}
+        ],
+        keywords:"BANE-SLAYER'S BULWARK, BROKHYR, EXOFRAME, INFANTRY"
+      },
+      {
+        name:"Hearthkyn Warriors", count:"10 models", kw:"Infantry",
+        variants:[
+          {label:"Hearthkyn Warriors / Theyn", m:"5\"",t:"5",sv:"4+",w:"1",ld:"7+",oc:"2"}
+        ],
+        equip:"1 model w/ Plasma Knife (Autoch-pattern Bolt Pistol, Plasma Knife); 1 model w/ HYLas Auto Rifle (Bolt Pistol, HYLas Auto Rifle, Armoured Fists); 1 model w/ Magna-Rail Rifle (Bolt Pistol, Magna-rail Rifle, Armoured Fists); 1 Theyn (Bolt Pistol, Theyn's Armaments, Theyn's Pistol); 6 models w/ Ion Blaster (Bolt Pistol, Ion Blaster, Armoured Fists).",
+        ranged:[
+          {name:"Autoch-pattern Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"4+", s:"4", ap:"0", d:"1"},
+          {name:"HYLas Auto Rifle", tag:"Assault · Rapid Fire 3", range:"24\"", a:"3", bs:"4+", s:"6", ap:"-1", d:"1"},
+          {name:"Ion Blaster", tag:"", range:"18\"", a:"1", bs:"4+", s:"5", ap:"-2", d:"1"},
+          {name:"Magna-rail Rifle", tag:"Devastating Wounds · Heavy", range:"18\"", a:"1", bs:"5+", s:"12", ap:"-3", d:"D3+3"},
+          {name:"Theyn's Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"4+", s:"8", ap:"-2", d:"1"}
+        ],
+        melee:[
+          {name:"Armoured Fists", tag:"", range:"Melee", a:"1", bs:"4+", s:"4", ap:"0", d:"1"},
+          {name:"Plasma Knife", tag:"", range:"Melee", a:"2", bs:"4+", s:"4", ap:"-2", d:"1"},
+          {name:"Theyn's Armaments", tag:"", range:"Melee", a:"2", bs:"4+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Prioritised Efficiency"},
+          {label:"Weavefield Crest:", text:"This unit has a 5+ invulnerable save."},
+          {label:"Panspectral Scanning:", text:"This unit's ranged attacks can re-roll hit rolls of 1."}
+        ],
+        keywords:"BANE-SLAYER'S BULWARK, EXPLOSIVES, HEARTHKYN, INFANTRY"
+      }
+    ],
+    stratagems:[
+      {name:"Opportune Advance", cost:"1 CP",
+        when:"Your opponent's Shooting phase, when an enemy unit that targeted a friendly unengaged Bane-Slayer's Bulwark Einhyr Hearthguard unit has shot.",
+        effect:"Your unit can make a surge move of up to D6+1\"."},
+      {name:"Point-blank Fusillade", cost:"1 CP",
+        when:"Your Shooting phase, when a friendly Bane-Slayer's Bulwark unit is selected to shoot.",
+        effect:"Your unit's ranged attacks have the [CLOSE-QUARTERS] ability."},
+      {name:"Claimed for the Kindred", cost:"1 CP",
+        when:"Command phase.",
+        effect:"Pick one friendly Bane-Slayer's Bulwark Hearthkyn Warriors unit — it has +1 to its Objective Control characteristic until the end of the turn."}
+    ],
+    enhancements:[
+      {name:"Indomitable Exemplar", badge:"Einhyr Champion only",
+        effect:"In the Fight phase, when this model is destroyed, if this unit has not been selected to fight this phase, roll one D6: on a 2+, do not remove this model from the battlefield. When this unit has fought, or at the end of the phase (whichever comes first), this model is removed from the battlefield."},
+      {name:"Brôkhyr Barrage", badge:"Brôkhyr Thunderkyn only",
+        effect:"This unit's ranged attacks have the [IGNORES COVER] ability. In your Shooting phase, when this unit has shot, you can select one enemy unit hit by those ranged attacks. If you do, that enemy unit makes a battle-shock roll."}
+    ],
+    detachmentRule:{
+      name:"Secure Resources", cost:"1 DP",
+      effect:"At the end of your Movement phase, if a friendly Bane-Slayer's Bulwark unit is controlling an objective, that objective is secured."
+    },
+    disposition:{ name:"Take and Hold" },
+    factionRule: {
+      title:"Prioritised Efficiency",
+      when:"Leagues of Votann units from your army have one of two abilities — Hostile Acquisition or Fortify Takeover — which changes based on your Yield Points (YP): at the start of the battle, and whenever you end a Command phase with fewer than 7 YP, your units have Hostile Acquisition; whenever you end a Command phase with 7+ YP, your units have Fortify Takeover instead (each lasts until the start of your next Command phase).",
+      effects:[
+        "Hostile Acquisition: attacks targeting an enemy unit within range of an objective marker get +1 to hit; you can re-roll Advance and Charge rolls for this unit.",
+        "Fortify Takeover: attacks targeting an enemy unit get +1 to hit if this unit is within range of an objective marker you control; attacks against this unit get -1 to wound if their Strength exceeds this unit's Toughness (unless this unit is a Vehicle).",
+        "Yield Points (YP): gain 1 YP each Command phase you control an objective in your deployment zone, plus (from battle round 2) 1 more for each of: controlling an objective outside your zone, controlling 2+ objectives outside your zone, and controlling more objectives than your opponent. Spending YP (via rules that allow it) reduces your total, which can push you back into Hostile Acquisition."
+      ]
+    }
   }
 };
 
