@@ -319,6 +319,7 @@
 /* ============ DATA ============ */
 let selectedEnhancement = null;
 let selectedRegimentAbility = null;
+let selectedVow = null;
 
 /* ============ SUPABASE ============ */
 const SUPABASE_URL = 'https://snwqetahwzhoeyoglbcu.supabase.co';
@@ -1722,6 +1723,146 @@ const FORCES = {
         "No mortal damage is inflicted on friendly units by Retreat abilities."
       ]
     }
+  },
+  vowsworn: {
+    id:'vowsworn', name:"Vow-sworn of Vedrenn", faction:"Black Templars", type:"Combat Patrol", system:"40k",
+    subtitle:"Combat Patrol · Black Templars · 11th Edition",
+    roster:"1x Emperor's Champion Vedrenn (Warlord, arrives Battle Round 2) · 1x Vow-sworn Crusader Squad (10 models) · 1x Vow-sworn Bladeguard Veterans (3 models) · 1x Vow-sworn Sword Brethren (5 models).",
+    units:[
+      {
+        name:"Emperor's Champion Vedrenn", count:"1 model (Warlord)", kw:"Character",
+        variants:[
+          {label:"Emperor's Champion Vedrenn", m:"8\"",t:"4",sv:"2+",w:"5",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"This model is equipped with: Bolt Pistol; Black Sword — Strike.",
+        note:"Starts the battle in Strategic Reserves and cannot be set up on the battlefield before Battle Round 2 (per the Close-range Destruction detachment rule) — when set up, must be wholly within your deployment zone.",
+        ranged:[
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"2+", s:"4", ap:"0", d:"1"}
+        ],
+        melee:[
+          {name:"Black Sword — Strike", tag:"Anti-Character 5+ · Precision", range:"Melee", a:"6", bs:"2+", s:"8", ap:"-3", d:"3"},
+          {name:"Black Sword — Sweep", tag:"", range:"Melee", a:"10", bs:"2+", s:"6", ap:"-2", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Heirs of Sigismund; Templar Vows"},
+          {label:"Deft Riposte:", text:"Melee attacks that target this unit have [HAZARDOUS]."}
+        ],
+        keywords:"CHARACTER, EMPEROR'S CHAMPION, EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VOW-SWORN OF VEDRENN"
+      },
+      {
+        name:"Vow-sworn Crusader Squad", count:"10 models", kw:"Battleline",
+        variants:[
+          {label:"Sword Brother", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"2"},
+          {label:"Initiate", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"2"},
+          {label:"Neophyte", m:"6\"",t:"4",sv:"4+",w:"2",ld:"6+",oc:"2"}
+        ],
+        equip:"1 Sword Brother (Heavy Bolt Pistol, Master-crafted Power Weapon); 1 Initiate w/ Pyreblaster (Bolt Pistol, Knives and Fists, Pyreblaster); 2 Initiates w/ Bolt Rifle (Bolt Pistol, Bolt Rifle, Knives and Fists); 2 Initiates w/ Chainsword (Heavy Bolt Pistol, Chainsword); 2 Neophytes w/ Chainsword (Bolt Pistol, Chainsword); 2 Neophytes w/ Firearm (Neophyte Firearm, Knives and Fists).",
+        ranged:[
+          {name:"Pyreblaster", tag:"Ignores Cover · Torrent", range:"12\"", a:"D6", bs:"3+", s:"5", ap:"0", d:"1"},
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"4", ap:"0", d:"1"},
+          {name:"Bolt Rifle", tag:"Assault · Heavy", range:"24\"", a:"2", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Neophyte Firearm", tag:"Assault", range:"18\"", a:"2", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        melee:[
+          {name:"Chainsword", tag:"Sustained Hits 1", range:"Melee", a:"4", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Knives and Fists", tag:"", range:"Melee", a:"3", bs:"3+", s:"4", ap:"0", d:"1"},
+          {name:"Master-crafted Power Weapon", tag:"Lethal Hits", range:"Melee", a:"3", bs:"2+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Heirs of Sigismund; Templar Vows"},
+          {label:"Righteous Zeal (Once per turn, per unit):", text:"In your opponent's Shooting phase, when an enemy unit has shot, if those attacks destroyed a model in this unit and this unit is unengaged, this unit can make a surge move of up to D6+2\"."}
+        ],
+        keywords:"BATTLELINE, EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VOW-SWORN OF VEDRENN"
+      },
+      {
+        name:"Vow-sworn Bladeguard Veterans", count:"3 models", kw:"Infantry",
+        variants:[
+          {label:"Bladeguard Veteran Sergeant", m:"6\"",t:"4",sv:"3+",w:"3",ld:"6+",oc:"1"},
+          {label:"Bladeguard Veteran", m:"6\"",t:"4",sv:"3+",w:"3",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"The Sergeant is equipped with: Master-crafted Power Weapon; Neo-Volkite Pistol. Every Bladeguard Veteran is equipped with: Heavy Bolt Pistol; Master-crafted Power Weapon.",
+        ranged:[
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Neo-Volkite Pistol", tag:"Close-Quarters · Devastating Wounds", range:"12\"", a:"1", bs:"3+", s:"5", ap:"0", d:"2"}
+        ],
+        melee:[
+          {name:"Master-crafted Power Weapon", tag:"", range:"Melee", a:"4", bs:"3+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Heirs of Sigismund; Templar Vows"},
+          {label:"Bladeguard (Once per turn, per unit):", text:"In the Fight phase, when this unit is selected to fight or when an enemy unit targets this unit, you can select one of the following: this unit's melee attacks can re-roll hit rolls of 1; or this unit can re-roll saving rolls of 1."}
+        ],
+        keywords:"EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VOW-SWORN OF VEDRENN"
+      },
+      {
+        name:"Vow-sworn Sword Brethren", count:"5 models", kw:"Infantry",
+        variants:[
+          {label:"Sword Brother Castellan", m:"6\"",t:"4",sv:"3+",w:"3",ld:"6+",oc:"1"},
+          {label:"Sword Brother", m:"6\"",t:"4",sv:"3+",w:"3",ld:"6+",oc:"1"}
+        ],
+        equip:"1 Sword Brother Castellan (Combi-Weapon, Master-crafted Power Weapon); 1 Sword Brother w/ Heavy Bolt Pistol and Chainsword; 1 Sword Brother w/ Plasma Pistol and Master-crafted Power Weapon; 1 Sword Brother w/ Pyre Pistol and Master-crafted Power Weapon; 1 Sword Brother w/ Twin Lightning Claws.",
+        ranged:[
+          {name:"Combi-Weapon", tag:"Anti-Infantry 4+ · Devastating Wounds · Rapid Fire 1", range:"24\"", a:"1", bs:"3+", s:"4", ap:"0", d:"1"},
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"},
+          {name:"Plasma Pistol — Standard", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"7", ap:"-2", d:"1"},
+          {name:"Plasma Pistol — Supercharge", tag:"Close-Quarters · Hazardous", range:"12\"", a:"1", bs:"3+", s:"8", ap:"-3", d:"2"},
+          {name:"Pyre Pistol", tag:"Close-Quarters · Ignores Cover · Torrent", range:"12\"", a:"D6", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        melee:[
+          {name:"Chainsword", tag:"Sustained Hits 1", range:"Melee", a:"6", bs:"2+", s:"4", ap:"-1", d:"1"},
+          {name:"Master-Crafted Power Weapon", tag:"Lethal Hits", range:"Melee", a:"3", bs:"2+", s:"5", ap:"-2", d:"2"},
+          {name:"Twin Lightning Claws", tag:"Twin-linked", range:"Melee", a:"5", bs:"2+", s:"5", ap:"-2", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Heirs of Sigismund; Templar Vows"},
+          {label:"Exploit Their Cowardice:", text:"When an enemy unit engaged with this unit is selected to make a fall-back move, after that enemy unit ends that fall-back move, if this unit is unengaged, this unit can make a normal move."}
+        ],
+        keywords:"EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VOW-SWORN OF VEDRENN"
+      }
+    ],
+    stratagems:[
+      {name:"Come To Their Aid", cost:"1 CP",
+        when:"Your Charge phase, when a friendly Vow-sworn of Vedrenn unit has made a charge roll.",
+        effect:"Add 2 to the charge roll. When selecting charge targets, your unit can only select enemy units engaged with friendly Vow-sworn of Vedrenn units."},
+      {name:"Heavy Strikes", cost:"1 CP",
+        when:"Fight phase, when a friendly Vow-sworn Sword Brethren Squad or Bladeguard Veteran Squad unit is selected to fight.",
+        effect:"Your unit's melee attacks that target a Monster or Vehicle unit have +1 to their Damage characteristic."},
+      {name:"Blessed Aura", cost:"1 CP",
+        when:"Your Command phase, when a friendly Vow-sworn of Vedrenn unit passes a battle-shock roll.",
+        effect:"Melee attacks that target your unit have -1 to hit rolls until the start of your next turn."}
+    ],
+    vows:[
+      {name:"Abhor the Witch, Destroy the Witch", badge:"Templar Vow",
+        effect:"This unit's melee attacks that target a PSYKER unit have [PRECISION]. When this unit declares a charge, if an enemy PSYKER unit is within 12\" of this unit, you can use this part of this ability — if you do, this unit can re-roll that charge roll, but must end that charge move engaged with one or more of those enemy PSYKER units."},
+      {name:"Accept any Challenge, no Matter the Odds", badge:"Templar Vow",
+        effect:"Each time a model in this unit makes a melee attack, if the Strength characteristic of that attack is less than or equal to the Toughness characteristic of the target, add 1 to the Wound roll."},
+      {name:"Suffer Not the Unclean to Live", badge:"Templar Vow",
+        effect:"This unit is eligible to declare a charge in a turn in which it Fell Back, and each time a model in this unit makes a Pile-in or Consolidation move, it does not need to end that move closer to the closest enemy model, provided it ends that move as close as possible to the closest enemy unit."},
+      {name:"Uphold the Honour of the Emperor", badge:"Templar Vow",
+        effect:"If this unit has the INFANTRY keyword: at the end of your Command phase, if this unit is within range of an objective marker you control, that objective marker remains under your control until your opponent's Level of Control over it is greater at the end of a phase. If the mission features Actions, this unit is eligible to start performing an Action in a turn in which it Advanced."}
+    ],
+    enhancements:[
+      {name:"Divine Protection", badge:"Vow-sworn Sword Brethren only",
+        effect:"(Once per battle, per unit) When an enemy unit targets this unit, you can use this ability. If you do, this unit has a 4+ invulnerable save."},
+      {name:"Divine Endurance", badge:"Emperor's Champion Vedrenn only",
+        effect:"At the start of your Movement phase, you can select one friendly Vow-sworn of Vedrenn unit visible to and within 12\" of this model. If you do, when that unit is selected to make an advance or fall-back move this turn: if that unit uses the desperate escape mode, it passes any hazard rolls; and that move does not prevent that unit from being eligible to start an action."}
+    ],
+    detachmentRule:{
+      name:"Close-range Destruction", cost:"1 DP",
+      effect:"Friendly Vow-sworn of Vedrenn units' attacks that target a unit within 12\" can ignore modifiers to BS, WS, and Hit rolls. When playing a Combat Patrol battle, Emperor's Champion Vedrenn must start the battle in Strategic Reserves and cannot be set up on the battlefield before Battle Round 2 — when set up, it must be wholly within your deployment zone."
+    },
+    disposition:{ name:"Take and Hold" },
+    factionRule: {
+      title:"Heirs of Sigismund",
+      when:"Army-wide restriction for Black Templars forces.",
+      effects:[
+        "If your army includes one or more Black Templars units, ADEPTUS ASTARTES units from your army lose the Oath of Moment army rule (if they have it), and it is replaced with the Templar Vows army rule — pick one Vow (below, shown as selectable options) at the start of the first battle round.",
+        "Your army cannot include ADEPTUS ASTARTES PSYKER models, or the 1st Company Task Force Detachment."
+      ]
+    }
   }
 };
 
@@ -2104,6 +2245,20 @@ function renderFaction(){
       <div class="rule-line"><b>${force.disposition.name}</b></div>
     </div>` : ''}
 
+    ${force.vows ? `
+    <div class="section-head"><h2>Templar Vows</h2><div class="rule"></div></div>
+    <div class="rule-line" style="color:var(--muted); font-size:12px; margin:-2px 0 10px;">Pick one at the start of the first battle round — tap to select.</div>
+    ${force.vows.map((v,i)=>`
+      <div class="info-card selectable" data-vow="${i}">
+        <div class="row1"><h3>${v.name}</h3><span class="default-badge">${v.badge}</span></div>
+        <div class="rule-line">${v.effect}</div>
+        <div class="select-indicator">
+          <span class="select-check">✓ Selected</span>
+          <span class="select-prompt">Tap to select</span>
+        </div>
+      </div>`).join('')}
+    ` : ''}
+
     <div class="section-head"><h2>Enhancements</h2><div class="rule"></div></div>
     <div class="rule-line" style="color:var(--muted); font-size:12px; margin:-2px 0 10px;">Tap the one you're taking — only one can be selected.</div>
     ${force.enhancements.map((e,i)=>`
@@ -2122,13 +2277,24 @@ function renderFaction(){
     </div>
   `;
 
-  el.querySelectorAll('.info-card.selectable').forEach(card=>{
+  el.querySelectorAll('[data-enh]').forEach(card=>{
     if(Number(card.dataset.enh) === selectedEnhancement) card.classList.add('selected');
     card.addEventListener('click', ()=>{
       const idx = Number(card.dataset.enh);
       selectedEnhancement = (selectedEnhancement === idx) ? null : idx;
-      el.querySelectorAll('.info-card.selectable').forEach(c=>{
+      el.querySelectorAll('[data-enh]').forEach(c=>{
         c.classList.toggle('selected', Number(c.dataset.enh) === selectedEnhancement);
+      });
+    });
+  });
+
+  el.querySelectorAll('[data-vow]').forEach(card=>{
+    if(Number(card.dataset.vow) === selectedVow) card.classList.add('selected');
+    card.addEventListener('click', ()=>{
+      const idx = Number(card.dataset.vow);
+      selectedVow = (selectedVow === idx) ? null : idx;
+      el.querySelectorAll('[data-vow]').forEach(c=>{
+        c.classList.toggle('selected', Number(c.dataset.vow) === selectedVow);
       });
     });
   });
@@ -2182,6 +2348,7 @@ function selectForce(id){
   currentForceId = id;
   selectedEnhancement = null;
   selectedRegimentAbility = null;
+  selectedVow = null;
   document.getElementById('search').value = '';
   renderHeader();
   renderTabs();
