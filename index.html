@@ -2145,6 +2145,123 @@ const FORCES = {
         "Yield Points (YP): gain 1 YP each Command phase you control an objective in your deployment zone, plus (from battle round 2) 1 more for each of: controlling an objective outside your zone, controlling 2+ objectives outside your zone, and controlling more objectives than your opponent. Spending YP (via rules that allow it) reduces your total, which can push you back into Hostile Acquisition."
       ]
     }
+  },
+  vengefulbrethren: {
+    id:'vengefulbrethren', name:"The Vengeful Brethren", faction:"Dark Angels", type:"Combat Patrol", system:"40k",
+    subtitle:"Combat Patrol · Dark Angels · 11th Edition",
+    roster:"1x Master Zacharial · 1x Vengeful Brethren Bladeguard Veteran Squad (3 models) · 1x Vengeful Brethren Hellblaster Squad (5 models) · 1x Vengeful Brethren Intercessor Squad (10 models).",
+    units:[
+      {
+        name:"Master Zacharial", count:"1 model", kw:"Character",
+        variants:[
+          {label:"Master Zacharial", m:"5\"",t:"6",sv:"3+",w:"6",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"This model is equipped with: Boltstorm Gauntlet; Power Fist; Relic Chainsword.",
+        ranged:[
+          {name:"Boltstorm Gauntlet", tag:"Close-Quarters", range:"12\"", a:"3", bs:"2+", s:"4", ap:"-1", d:"1"}
+        ],
+        melee:[
+          {name:"Power Fist", tag:"", range:"Melee", a:"5", bs:"2+", s:"8", ap:"-2", d:"2"},
+          {name:"Relic Chainsword", tag:"Extra Attacks", range:"Melee", a:"3", bs:"2+", s:"4", ap:"-1", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; The Deathwing; The Ravenwing; The Unforgiven"},
+          {label:"Gravis Protection:", text:"Attacks that target this unit have -1 to their Damage characteristic."}
+        ],
+        keywords:"CAPTAIN, CHARACTER, GRAVIS, IMPERIUM, INFANTRY, VENGEFUL BRETHREN"
+      },
+      {
+        name:"Vengeful Brethren Bladeguard Veteran Squad", count:"3 models", kw:"Infantry",
+        variants:[
+          {label:"Bladeguard Veteran", m:"6\"",t:"4",sv:"3+",w:"3",ld:"6+",oc:"1"},
+          {label:"Bladeguard Veteran Sergeant", m:"6\"",t:"3",sv:"3+",w:"3",ld:"6+",oc:"1"}
+        ],
+        invuln:"4+ invulnerable save",
+        equip:"Every model is equipped with: Heavy Bolt Pistol; Master-crafted Power Weapon.",
+        ranged:[
+          {name:"Heavy Bolt Pistol", tag:"Close-Quarters", range:"18\"", a:"1", bs:"3+", s:"4", ap:"-1", d:"1"}
+        ],
+        melee:[
+          {name:"Master-crafted Power Weapon", tag:"", range:"Melee", a:"4", bs:"3+", s:"5", ap:"-2", d:"2"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; The Deathwing; The Ravenwing; The Unforgiven"},
+          {label:"Bladeguard (Once per turn, per unit):", text:"In the Fight phase, when this unit is selected to fight or when an enemy unit targets this unit, you can select one of the following: this unit's melee attacks can re-roll hit rolls of 1; or this unit can re-roll saving rolls of 1."}
+        ],
+        keywords:"EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VENGEFUL BRETHREN"
+      },
+      {
+        name:"Vengeful Brethren Hellblaster Squad", count:"5 models", kw:"Infantry",
+        variants:[
+          {label:"Hellblaster Sergeant / Hellblaster", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"1"}
+        ],
+        equip:"Every model is equipped with: Bolt Pistol; Knives and Fists; Plasma Incinerator.",
+        ranged:[
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"4", ap:"0", d:"1"},
+          {name:"Plasma Incinerator — Standard", tag:"Assault · Heavy", range:"24\"", a:"2", bs:"3+", s:"7", ap:"-2", d:"1"},
+          {name:"Plasma Incinerator — Supercharge", tag:"Assault · Hazardous · Heavy", range:"24\"", a:"2", bs:"3+", s:"8", ap:"-3", d:"2"}
+        ],
+        melee:[
+          {name:"Knives and Fists", tag:"", range:"Melee", a:"3", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; The Deathwing; The Ravenwing; The Unforgiven"},
+          {label:"Punishing Volley:", text:"In your Shooting phase, when this unit has shot, select one enemy unit hit by those attacks. That unit makes a battle-shock roll."}
+        ],
+        keywords:"EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VENGEFUL BRETHREN"
+      },
+      {
+        name:"Vengeful Brethren Intercessor Squad", count:"10 models", kw:"Battleline",
+        variants:[
+          {label:"Intercessor Sergeant / Intercessor", m:"6\"",t:"4",sv:"3+",w:"2",ld:"6+",oc:"2"}
+        ],
+        equip:"Every model is equipped with: Bolt Pistol; Bolt Rifle; Knives and Fists.",
+        ranged:[
+          {name:"Bolt Pistol", tag:"Close-Quarters", range:"12\"", a:"1", bs:"3+", s:"4", ap:"0", d:"1"},
+          {name:"Bolt Rifle", tag:"Assault · Heavy", range:"24\"", a:"2", bs:"3+", s:"4", ap:"-1", d:"1"}
+        ],
+        melee:[
+          {name:"Knives and Fists", tag:"", range:"Melee", a:"3", bs:"3+", s:"4", ap:"0", d:"1"}
+        ],
+        abilities:[
+          {core:true, text:"Oath of Moment; The Deathwing; The Ravenwing; The Unforgiven"},
+          {label:"Objective Secured:", text:"At the end of your Command phase, if this unit is controlling an objective, that objective is secured."}
+        ],
+        keywords:"BATTLELINE, EXPLOSIVES, IMPERIUM, INFANTRY, TACTICUS, VENGEFUL BRETHREN"
+      }
+    ],
+    stratagems:[
+      {name:"For the Lion", cost:"1 CP",
+        when:"Command phase.",
+        effect:"Pick one friendly Vengeful Brethren unit — it has +1 to its Objective Control characteristic until the end of the turn."},
+      {name:"Mission Focus", cost:"1 CP",
+        when:"Your Shooting phase or the Fight phase, when a friendly Vengeful Brethren unit within range of an objective is selected to attack.",
+        effect:"Your unit's attacks have +1 to hit rolls."},
+      {name:"Determined to the Last", cost:"1 CP",
+        when:"Fight phase, when an enemy unit targets a friendly Vengeful Brethren Bladeguard Veteran Squad unit.",
+        effect:"When a model in your unit is destroyed, if your unit has not been selected to fight this phase, roll one D6: on a 2+, do not remove that model from the battlefield. When your unit has fought, or at the end of the phase (whichever comes first), that model is removed from the battlefield."}
+    ],
+    enhancements:[
+      {name:"Supreme Combatant", badge:"Gravis Captain only",
+        effect:"When this unit is selected to attack, this unit's attacks have [LETHAL HITS] or [SUSTAINED HITS 1] (choose one)."},
+      {name:"Dutiful Defenders", badge:"Bladeguard Veteran Squad only",
+        effect:"(Once per battle round, per army) When you target this unit with the Heroic Intervention stratagem, that use is -1 CP."}
+    ],
+    detachmentRule:{
+      name:"Honoured Knights", cost:"1 DP",
+      effect:"When an enemy unit ends a charge move, friendly Vengeful Brethren units engaged with that enemy unit are in defence stance until the end of the turn — while a unit is in defence stance, attacks that target it with a Strength greater than its Toughness have -1 to wound rolls."
+    },
+    disposition:{ name:"Take and Hold" },
+    factionRule: {
+      title:"Oath of Moment",
+      when:"If your Army Faction is Adeptus Astartes, at the start of your Command phase, select one unit from your opponent's army. Until the start of your next Command phase, that enemy unit is your Oath of Moment target.",
+      effects:[
+        "Each time a model with this ability makes an attack that targets your Oath of Moment target, you can re-roll the Hit roll (plus +1 to the Wound roll if your army has no Black Templars, Blood Angels, Dark Angels Epic Hero exceptions, Deathwatch, or Space Wolves units).",
+        "The Unforgiven: a second Faction keyword on a unit's datasheet names its Chapter — you cannot mix units from more than one Chapter in your army.",
+        "The Deathwing / The Ravenwing: certain unit types (Terminators, Bladeguard, Land Raiders, Dreadnoughts, Mounted/Flying Vehicles, etc.) gain the DEATHWING or RAVENWING keyword when drawn from the Dark Angels Chapter — the Bladeguard Veteran Squad in this force gains DEATHWING."
+      ]
+    }
   }
 };
 
